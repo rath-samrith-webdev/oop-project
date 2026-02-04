@@ -1,0 +1,10 @@
+E:\New folder\dasboardApplications\dasboardApplications\bin\Debug\net10.0-windows\win-x64\publish\dasboardApplications.exe
+E:\New folder\dasboardApplications\dasboardApplications\bin\Debug\net10.0-windows\win-x64\publish\dasboardApplications.dll
+E:\New folder\dasboardApplications\dasboardApplications\bin\Debug\net10.0-windows\win-x64\publish\dasboardApplications.deps.json
+E:\New folder\dasboardApplications\dasboardApplications\bin\Debug\net10.0-windows\win-x64\publish\dasboardApplications.runtimeconfig.json
+E:\New folder\dasboardApplications\dasboardApplications\bin\Debug\net10.0-windows\win-x64\publish\dasboardApplications.pdb
+E:\New folder\dasboardApplications\dasboardApplications\bin\Debug\net10.0-windows\win-x64\publish\Microsoft.Data.Sqlite.dll
+E:\New folder\dasboardApplications\dasboardApplications\bin\Debug\net10.0-windows\win-x64\publish\SQLitePCLRaw.batteries_v2.dll
+E:\New folder\dasboardApplications\dasboardApplications\bin\Debug\net10.0-windows\win-x64\publish\SQLitePCLRaw.core.dll
+E:\New folder\dasboardApplications\dasboardApplications\bin\Debug\net10.0-windows\win-x64\publish\SQLitePCLRaw.provider.e_sqlite3.dll
+E:\New folder\dasboardApplications\dasboardApplications\bin\Debug\net10.0-windows\win-x64\publish\e_sqlite3.dll
