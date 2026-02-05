@@ -25,7 +25,19 @@ namespace dasboardApplications.Features.ScoreBoard
         private void SetupUI()
         {
             this.Text = "High Scores";
-            this.Size = new Size(500, 400);
+            this.BackColor = UITheme.SecondaryBackground;
+            this.Padding = new Padding(10);
+
+            var titleLabel = new Label
+            {
+                Text = "GLOBAL LEADERBOARD",
+                Dock = DockStyle.Top,
+                Height = 40,
+                Font = UITheme.TitleFont,
+                ForeColor = UITheme.AccentColor,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            this.Controls.Add(titleLabel);
 
             dataGridView = new DataGridView
             {
@@ -34,10 +46,28 @@ namespace dasboardApplications.Features.ScoreBoard
                 ReadOnly = true,
                 AllowUserToAddRows = false,
                 RowHeadersVisible = false,
-                BackgroundColor = Color.White
+                BackgroundColor = UITheme.SecondaryBackground,
+                BorderStyle = BorderStyle.None,
+                GridColor = Color.FromArgb(40, 40, 45),
+                ForeColor = UITheme.TextPrimary,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect
             };
 
+            // Custom styling for headers and cells
+            dataGridView.EnableHeadersVisualStyles = false;
+            dataGridView.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(30, 30, 35);
+            dataGridView.ColumnHeadersDefaultCellStyle.ForeColor = UITheme.TextSecondary;
+            dataGridView.ColumnHeadersDefaultCellStyle.Font = UITheme.BodyFont;
+            dataGridView.ColumnHeadersHeight = 45;
+
+            dataGridView.DefaultCellStyle.BackColor = UITheme.SecondaryBackground;
+            dataGridView.DefaultCellStyle.ForeColor = UITheme.TextPrimary;
+            dataGridView.DefaultCellStyle.SelectionBackColor = Color.FromArgb(40, UITheme.AccentColor);
+            dataGridView.DefaultCellStyle.SelectionForeColor = UITheme.TextPrimary;
+            dataGridView.RowTemplate.Height = 35;
+
             this.Controls.Add(dataGridView);
+            this.Controls.Add(new Panel { Dock = DockStyle.Top, Height = 10 }); // Spacer
         }
 
         private void LoadScores()
@@ -54,6 +84,7 @@ namespace dasboardApplications.Features.ScoreBoard
                     .ToList();
 
                 dataGridView.DataSource = scores;
+                dataGridView.AutoResizeColumns();
             }
             catch (Exception ex)
             {

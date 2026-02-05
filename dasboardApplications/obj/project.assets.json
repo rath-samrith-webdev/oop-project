@@ -299,26 +299,24 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\raths\\.nuget\\packages\\": {}
+    "C:\\Users\\User\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\New folder\\oop-project\\dasboardApplications\\dasboardApplications.csproj",
+      "projectUniqueName": "D:\\personal-projects\\oop-project\\dasboardApplications\\dasboardApplications.csproj",
       "projectName": "dasboardApplications",
-      "projectPath": "E:\\New folder\\oop-project\\dasboardApplications\\dasboardApplications.csproj",
-      "packagesPath": "C:\\Users\\raths\\.nuget\\packages\\",
-      "outputPath": "E:\\New folder\\oop-project\\dasboardApplications\\obj\\",
+      "projectPath": "D:\\personal-projects\\oop-project\\dasboardApplications\\dasboardApplications.csproj",
+      "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
+      "outputPath": "D:\\personal-projects\\oop-project\\dasboardApplications\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\raths\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net10.0-windows"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -367,7 +365,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.102/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",

@@ -2,6 +2,12 @@ using dasboardApplications.Interfaces;
 using dasboardApplications.Services;
 using dasboardApplications.Core;
 using dasboardApplications.Models;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
 
 namespace dasboardApplications.Features.LoanManagement
 {
@@ -19,7 +25,58 @@ namespace dasboardApplications.Features.LoanManagement
             _calculatorService = new LoanCalculatorService();
             _validationService = new ValidationService();
 
+            ApplyModernTheme();
             LoadDefaults();
+        }
+
+        private void ApplyModernTheme()
+        {
+            this.BackColor = UITheme.SecondaryBackground;
+
+            // Labels and Title
+            var labels = this.Controls.Cast<Control>().Where(c => c is Label).ToList();
+            foreach (Label lbl in labels)
+            {
+                lbl.ForeColor = UITheme.TextPrimary;
+                lbl.Font = UITheme.BodyFont;
+            }
+
+            // Inputs
+            var inputs = this.Controls.Cast<Control>().Where(c => c is TextBox || c is ComboBox).ToList();
+            foreach (var ctrl in inputs)
+            {
+                ctrl.BackColor = Color.FromArgb(35, 35, 40);
+                ctrl.ForeColor = UITheme.TextPrimary;
+                ctrl.Font = UITheme.BodyFont;
+                if (ctrl is TextBox txt) txt.BorderStyle = BorderStyle.FixedSingle;
+            }
+
+            // Buttons
+            btnCalculate.BackColor = UITheme.AccentColor;
+            btnCalculate.FlatAppearance.BorderSize = 0;
+            btnCalculate.Font = UITheme.ButtonFont;
+
+            btnClear.BackColor = Color.Transparent;
+            btnClear.ForeColor = UITheme.TextSecondary;
+            btnClear.FlatAppearance.BorderColor = UITheme.TextMuted;
+            btnClear.Font = UITheme.ButtonFont;
+
+            // Panels
+            panel1.BackColor = Color.FromArgb(30, 30, 35);
+            panel2.BackColor = Color.Transparent;
+
+            label6.ForeColor = label7.ForeColor = label8.ForeColor = UITheme.TextSecondary;
+
+            // DataGrid
+            dgvSchedule.BackgroundColor = Color.FromArgb(30, 30, 35);
+            dgvSchedule.BorderStyle = BorderStyle.None;
+            dgvSchedule.GridColor = Color.FromArgb(45, 45, 50);
+            dgvSchedule.EnableHeadersVisualStyles = false;
+            dgvSchedule.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(40, 40, 45);
+            dgvSchedule.ColumnHeadersDefaultCellStyle.ForeColor = UITheme.TextSecondary;
+            dgvSchedule.DefaultCellStyle.BackColor = Color.FromArgb(30, 30, 35);
+            dgvSchedule.DefaultCellStyle.ForeColor = UITheme.TextPrimary;
+            dgvSchedule.DefaultCellStyle.SelectionBackColor = Color.FromArgb(50, UITheme.AccentColor);
         }
 
         private void LoadDefaults()

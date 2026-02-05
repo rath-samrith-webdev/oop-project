@@ -17,6 +17,7 @@ namespace dasboardApplications.Features.TicTacToe
         private ComboBox modeComboBox;
         private NumericUpDown sizeInput;
         private Button startButton;
+        private Label turnLabel;
         private IDatabaseService _dbService;
 
         public TicTacToe()
@@ -28,27 +29,59 @@ namespace dasboardApplications.Features.TicTacToe
         private void SetupUI()
         {
             this.Text = "Tic Tac Toe - Dynamic Grid";
-            this.Size = new Size(600, 700);
+            this.BackColor = UITheme.SecondaryBackground;
+            this.Padding = new Padding(20);
 
-            FlowLayoutPanel controls = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 50, Padding = new Padding(10) };
+            FlowLayoutPanel controls = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 60,
+                Padding = new Padding(10),
+                BackColor = Color.FromArgb(30, 30, 35)
+            };
 
-            controls.Controls.Add(new Label { Text = "Grid Size:", AutoSize = true, Padding = new Padding(0, 5, 0, 0) });
-            sizeInput = new NumericUpDown { Value = 3, Minimum = 3, Maximum = 15, Width = 50 };
-            controls.Controls.Add(sizeInput);
+            var lblSize = new Label { Text = "Grid Size:", AutoSize = true, ForeColor = UITheme.TextSecondary, Margin = new Padding(0, 8, 0, 0) };
+            sizeInput = new NumericUpDown { Value = 3, Minimum = 3, Maximum = 10, Width = 60, BackColor = Color.FromArgb(40, 40, 45), ForeColor = UITheme.TextPrimary, BorderStyle = BorderStyle.FixedSingle };
 
-            controls.Controls.Add(new Label { Text = "Mode:", AutoSize = true, Padding = new Padding(10, 5, 0, 0) });
-            modeComboBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 100 };
+            var lblMode = new Label { Text = "Game Mode:", AutoSize = true, ForeColor = UITheme.TextSecondary, Margin = new Padding(20, 8, 0, 0) };
+            modeComboBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 120, BackColor = Color.FromArgb(40, 40, 45), ForeColor = UITheme.TextPrimary, FlatStyle = FlatStyle.Flat };
             modeComboBox.Items.AddRange(Enum.GetNames(typeof(TicTacToeEngine.GameMode)));
             modeComboBox.SelectedIndex = 0;
-            controls.Controls.Add(modeComboBox);
 
-            startButton = new Button { Text = "Start Game", Width = 100 };
+            startButton = new Button
+            {
+                Text = "START NEW GAME",
+                Width = 150,
+                Height = 35,
+                BackColor = UITheme.AccentColor,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = UITheme.ButtonFont,
+                Margin = new Padding(30, 0, 0, 0)
+            };
+            startButton.FlatAppearance.BorderSize = 0;
             startButton.Click += StartButton_Click;
+
+            controls.Controls.Add(lblSize);
+            controls.Controls.Add(sizeInput);
+            controls.Controls.Add(lblMode);
+            controls.Controls.Add(modeComboBox);
             controls.Controls.Add(startButton);
 
-            gridPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20) };
+            turnLabel = new Label
+            {
+                Text = "Current Turn: X",
+                AutoSize = true,
+                ForeColor = UITheme.AccentColor,
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Margin = new Padding(30, 8, 0, 0)
+            };
+            controls.Controls.Add(turnLabel);
+
+            gridPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20), BackColor = Color.Transparent };
 
             this.Controls.Add(gridPanel);
+            this.Controls.Add(new Panel { Dock = DockStyle.Top, Height = 20 }); // Spacer
             this.Controls.Add(controls);
         }
 
@@ -82,10 +115,14 @@ namespace dasboardApplications.Features.TicTacToe
                     Button btn = new Button
                     {
                         Size = new Size(btnSize, btnSize),
-                        Location = new Point(c * btnSize, r * btnSize),
-                        Font = new Font("Arial", btnSize / 3, FontStyle.Bold),
+                        Location = new Point(c * (btnSize + 5), r * (btnSize + 5)),
+                        Font = new Font("Segoe UI", btnSize / 3, FontStyle.Bold),
+                        BackColor = Color.FromArgb(40, 40, 45),
+                        ForeColor = UITheme.TextPrimary,
+                        FlatStyle = FlatStyle.Flat,
                         Tag = new Point(r, c)
                     };
+                    btn.FlatAppearance.BorderSize = 0;
                     btn.Click += GridButton_Click;
                     buttons[r, c] = btn;
                     gridPanel.Controls.Add(btn);
@@ -105,11 +142,27 @@ namespace dasboardApplications.Features.TicTacToe
         {
             buttons[row, col].Text = player.ToString();
             buttons[row, col].Enabled = false;
-            buttons[row, col].ForeColor = (player == TicTacToeEngine.PlayerType.X) ? Color.Blue : Color.Red;
+            buttons[row, col].ForeColor = (player == TicTacToeEngine.PlayerType.X) ? Color.FromArgb(0, 122, 255) : Color.FromArgb(255, 59, 48);
+            buttons[row, col].BackColor = Color.FromArgb(45, 45, 50);
+
+            if (engine != null)
+            {
+                turnLabel.Text = $"Current Turn: {engine.CurrentPlayer}";
+                turnLabel.ForeColor = (engine.CurrentPlayer == TicTacToeEngine.PlayerType.X) ? Color.FromArgb(0, 122, 255) : Color.FromArgb(255, 59, 48);
+            }
         }
 
         private void Engine_OnGameEnded(string message)
         {
+            if (engine != null && engine.WinningLine != null)
+            {
+                foreach (var (r, c) in engine.WinningLine)
+                {
+                    buttons[r, c].BackColor = Color.FromArgb(0, 200, 83); // Green highlight
+                    buttons[r, c].ForeColor = Color.White;
+                }
+            }
+
             MessageBox.Show(message, "Game Over");
             gridPanel.Enabled = false;
         }

@@ -15,6 +15,7 @@ namespace dasboardApplications.Features.TicTacToe
         // Custom events for UI
         public event Action<int, int, PlayerType>? OnMoveMade;
         public event Action<PlayerType, bool>? OnInternalGameEnded;
+        public List<(int, int)>? WinningLine { get; private set; }
 
         private PlayerType[,] grid;
         private int size;
@@ -35,14 +36,14 @@ namespace dasboardApplications.Features.TicTacToe
 
         public void Start()
         {
-            // Reset logic
             grid = new PlayerType[size, size];
             currentPlayer = PlayerType.X;
+            WinningLine = null;
         }
 
         public void Reset() => Start();
 
-        public void Update() { } // Not needed for turn-based
+        public void Update() { }
 
         public bool MakeMove(int row, int col)
         {
@@ -76,15 +77,101 @@ namespace dasboardApplications.Features.TicTacToe
 
         public void MakeAIMove()
         {
-            var emptyCells = new List<(int, int)>();
+            if (size == 3)
+            {
+                var bestMove = GetBestMove();
+                MakeMove(bestMove.row, bestMove.col);
+            }
+            else
+            {
+                // Heuristic for larger grids
+                MakeHeuristicMove();
+            }
+        }
+
+        private (int row, int col) GetBestMove()
+        {
+            int bestScore = int.MinValue;
+            (int row, int col) move = (-1, -1);
+
             for (int r = 0; r < size; r++)
             {
                 for (int c = 0; c < size; c++)
                 {
                     if (grid[r, c] == PlayerType.None)
-                        emptyCells.Add((r, c));
+                    {
+                        grid[r, c] = PlayerType.O;
+                        int score = Minimax(grid, 0, false);
+                        grid[r, c] = PlayerType.None;
+                        if (score > bestScore)
+                        {
+                            bestScore = score;
+                            move = (r, c);
+                        }
+                    }
                 }
             }
+            return move;
+        }
+
+        private int Minimax(PlayerType[,] board, int depth, bool isMaximizing)
+        {
+            PlayerType winner = GetWinner(board);
+            if (winner == PlayerType.O) return 10 - depth;
+            if (winner == PlayerType.X) return depth - 10;
+            if (IsBoardFull(board)) return 0;
+
+            if (isMaximizing)
+            {
+                int bestScore = int.MinValue;
+                for (int r = 0; r < size; r++)
+                {
+                    for (int c = 0; c < size; c++)
+                    {
+                        if (board[r, c] == PlayerType.None)
+                        {
+                            board[r, c] = PlayerType.O;
+                            int score = Minimax(board, depth + 1, false);
+                            board[r, c] = PlayerType.None;
+                            bestScore = Math.Max(score, bestScore);
+                        }
+                    }
+                }
+                return bestScore;
+            }
+            else
+            {
+                int bestScore = int.MaxValue;
+                for (int r = 0; r < size; r++)
+                {
+                    for (int c = 0; c < size; c++)
+                    {
+                        if (board[r, c] == PlayerType.None)
+                        {
+                            board[r, c] = PlayerType.X;
+                            int score = Minimax(board, depth + 1, true);
+                            board[r, c] = PlayerType.None;
+                            bestScore = Math.Min(score, bestScore);
+                        }
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        private void MakeHeuristicMove()
+        {
+            // 1. Try to win
+            if (TryFindWinningMove(PlayerType.O, out var winMove)) { MakeMove(winMove.r, winMove.c); return; }
+            // 2. Block player
+            if (TryFindWinningMove(PlayerType.X, out var blockMove)) { MakeMove(blockMove.r, blockMove.c); return; }
+            // 3. Center
+            if (grid[size / 2, size / 2] == PlayerType.None) { MakeMove(size / 2, size / 2); return; }
+            // 4. Random
+            var emptyCells = new List<(int, int)>();
+            for (int r = 0; r < size; r++)
+                for (int c = 0; c < size; c++)
+                    if (grid[r, c] == PlayerType.None) emptyCells.Add((r, c));
 
             if (emptyCells.Count > 0)
             {
@@ -93,47 +180,81 @@ namespace dasboardApplications.Features.TicTacToe
             }
         }
 
+        private bool TryFindWinningMove(PlayerType player, out (int r, int c) move)
+        {
+            for (int r = 0; r < size; r++)
+            {
+                for (int c = 0; c < size; c++)
+                {
+                    if (grid[r, c] == PlayerType.None)
+                    {
+                        grid[r, c] = player;
+                        bool win = CheckWinInternal(r, c, false);
+                        grid[r, c] = PlayerType.None;
+                        if (win) { move = (r, c); return true; }
+                    }
+                }
+            }
+            move = (-1, -1);
+            return false;
+        }
+
+        private PlayerType GetWinner(PlayerType[,] board)
+        {
+            // Simplified check for minimax
+            for (int r = 0; r < size; r++)
+                if (board[r, 0] != PlayerType.None && board[r, 0] == board[r, 1] && board[r, 0] == board[r, 2]) return board[r, 0];
+            for (int c = 0; c < size; c++)
+                if (board[0, c] != PlayerType.None && board[0, c] == board[1, c] && board[0, c] == board[2, c]) return board[0, c];
+            if (board[0, 0] != PlayerType.None && board[0, 0] == board[1, 1] && board[0, 0] == board[2, 2]) return board[0, 0];
+            if (board[0, 2] != PlayerType.None && board[0, 2] == board[1, 1] && board[0, 2] == board[2, 0]) return board[0, 2];
+            return PlayerType.None;
+        }
+
+        private bool IsBoardFull(PlayerType[,] board)
+        {
+            foreach (var cell in board) if (cell == PlayerType.None) return false;
+            return true;
+        }
+
         private void SwitchPlayer()
         {
             currentPlayer = (currentPlayer == PlayerType.X) ? PlayerType.O : PlayerType.X;
         }
 
-        private bool IsGridFull()
-        {
-            foreach (var cell in grid)
-            {
-                if (cell == PlayerType.None) return false;
-            }
-            return true;
-        }
+        private bool IsGridFull() => IsBoardFull(grid);
 
-        private bool CheckWin(int row, int col)
+        private bool CheckWin(int row, int col) => CheckWinInternal(row, col, true);
+
+        private bool CheckWinInternal(int row, int col, bool storeLine)
         {
             PlayerType player = grid[row, col];
-            // Check row
-            bool win = true;
-            for (int i = 0; i < size; i++) if (grid[row, i] != player) { win = false; break; }
-            if (win) return true;
+            var line = new List<(int, int)>();
 
-            // Check col
-            win = true;
-            for (int i = 0; i < size; i++) if (grid[i, col] != player) { win = false; break; }
-            if (win) return true;
+            // Row
+            line.Clear();
+            for (int i = 0; i < size; i++) if (grid[row, i] == player) line.Add((row, i));
+            if (line.Count == size) { if (storeLine) WinningLine = line; return true; }
 
-            // Check main diagonal
+            // Col
+            line.Clear();
+            for (int i = 0; i < size; i++) if (grid[i, col] == player) line.Add((i, col));
+            if (line.Count == size) { if (storeLine) WinningLine = line; return true; }
+
+            // Main diag
             if (row == col)
             {
-                win = true;
-                for (int i = 0; i < size; i++) if (grid[i, i] != player) { win = false; break; }
-                if (win) return true;
+                line.Clear();
+                for (int i = 0; i < size; i++) if (grid[i, i] == player) line.Add((i, i));
+                if (line.Count == size) { if (storeLine) WinningLine = line; return true; }
             }
 
-            // Check anti diagonal
+            // Anti diag
             if (row + col == size - 1)
             {
-                win = true;
-                for (int i = 0; i < size; i++) if (grid[i, size - 1 - i] != player) { win = false; break; }
-                if (win) return true;
+                line.Clear();
+                for (int i = 0; i < size; i++) if (grid[i, size - 1 - i] == player) line.Add((i, size - 1 - i));
+                if (line.Count == size) { if (storeLine) WinningLine = line; return true; }
             }
 
             return false;

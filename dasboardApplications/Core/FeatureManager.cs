@@ -9,13 +9,19 @@ namespace dasboardApplications.Core
     /// </summary>
     public class FeatureManager
     {
-        private readonly List<IFeature> _features = new List<IFeature>();
+        private readonly List<Func<IFeature>> _featureFactories = new List<Func<IFeature>>();
 
-        public void RegisterFeature(IFeature feature)
+        public void RegisterFeature(Func<IFeature> factory)
         {
-            _features.Add(feature);
+            _featureFactories.Add(factory);
         }
 
-        public IEnumerable<IFeature> GetFeatures() => _features;
+        public IEnumerable<IFeature> GetFeatures()
+        {
+            foreach (var factory in _featureFactories)
+            {
+                yield return factory();
+            }
+        }
     }
 }
