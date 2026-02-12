@@ -42,13 +42,17 @@ namespace dasboardApplications.Features.CarRacing
         public void Update()
         {
             if (_isGameOver) return;
+        }
 
-            // Collision check
-            if (PlayerBounds.IntersectsWith(Enemy1Bounds) || PlayerBounds.IntersectsWith(Enemy2Bounds))
-            {
-                _isGameOver = true;
-                OnGameOver?.Invoke($"Game Over! Your Score: {_score} (Level {_level})");
-            }
+        public bool CheckCollision()
+        {
+            return PlayerBounds.IntersectsWith(Enemy1Bounds) || PlayerBounds.IntersectsWith(Enemy2Bounds);
+        }
+
+        public void TriggerGameOver(string message)
+        {
+            _isGameOver = true;
+            OnGameOver?.Invoke(message);
         }
 
         public void IncrementScore()

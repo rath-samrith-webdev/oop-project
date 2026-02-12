@@ -38,5 +38,10 @@ namespace dasboardApplications.Models
         /// openingBalance - PrincipalComponent.
         /// </summary>
         public double ClosingBalance { get; set; }
+
+        /// <summary>
+        /// Status of this installment (e.g., Paid, Unpaid).
+        /// </summary>
+        public string Status { get; set; } = "Unpaid";
     }
 }

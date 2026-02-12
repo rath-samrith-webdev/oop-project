@@ -12,10 +12,17 @@ namespace dasboardApplications
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
 
-            // Infrastructure is initialized via ServiceContainer in Dashboard or here
-            // ServiceContainer.Get<IDatabaseService>(); // This triggers initialization
+            try
+            {
+                // Infrastructure is initialized via ServiceContainer in Dashboard or here
+                // ServiceContainer.GetService<IDatabaseService>(); // This triggers initialization
 
-            Application.Run(new AuthenticationForm());
+                Application.Run(new AuthenticationForm());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred during startup: {ex.Message}\n\nStack Trace:\n{ex.StackTrace}", "Application Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

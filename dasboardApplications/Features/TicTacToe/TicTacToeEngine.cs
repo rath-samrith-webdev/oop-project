@@ -9,8 +9,8 @@ namespace dasboardApplications.Features.TicTacToe
         public enum PlayerType { None, X, O }
         public enum GameMode { PvP, PvE, EvE }
 
-        public event Action<int> OnScoreChanged;
-        public event Action<string> OnGameOver;
+        public event Action<int>? OnScoreChanged;
+        public event Action<string>? OnGameOver;
 
         // Custom events for UI
         public event Action<int, int, PlayerType>? OnMoveMade;

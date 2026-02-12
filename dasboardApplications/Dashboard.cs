@@ -15,7 +15,7 @@ namespace dasboardApplications
     public partial class Dashboard : Form
     {
         private readonly FeatureManager _featureManager;
-        private Panel sidebarPanel = null!;
+        private FlowLayoutPanel sidebarPanel = null!;
         private Panel contentPanel = null!;
         private Label statusLabel = null!;
         private Button? activeButton = null;
@@ -35,8 +35,9 @@ namespace dasboardApplications
             this.Text = "Nexus Dashboard";
             this.Size = new Size(1366, 850);
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = UITheme.ContentBackground;
+            this.BackColor = UITheme.PrimaryBackground;
             this.Font = UITheme.BodyFont;
+            this.ForeColor = UITheme.TextPrimary;
         }
 
         private void RegisterFeatures()
@@ -45,7 +46,10 @@ namespace dasboardApplications
             _featureManager.RegisterFeature(() => new CarRacing());
             _featureManager.RegisterFeature(() => new TicTacToe());
             _featureManager.RegisterFeature(() => new ScoreBoard());
+            _featureManager.RegisterFeature(() => new CustomerForm());
             _featureManager.RegisterFeature(() => new LoanForm());
+            _featureManager.RegisterFeature(() => new LoanListForm());
+            _featureManager.RegisterFeature(() => new PaymentHistoryForm());
         }
 
         private void CreateModernUI()
@@ -60,16 +64,19 @@ namespace dasboardApplications
                 RowCount = 1,
                 BackColor = UITheme.PrimaryBackground
             };
-            rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 260f)); // Sidebar Column
+            rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 320f)); // Sidebar Column
             rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f)); // Content Column
             this.Controls.Add(rootLayout);
 
             // Sidebar (Left - Col 0)
-            sidebarPanel = new Panel
+            sidebarPanel = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 BackColor = UITheme.PrimaryBackground,
-                Padding = new Padding(15, 30, 15, 30)
+                Padding = new Padding(15, 30, 15, 30),
+                AutoScroll = true,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false
             };
             rootLayout.Controls.Add(sidebarPanel, 0, 0);
 
@@ -79,7 +86,7 @@ namespace dasboardApplications
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
                 RowCount = 2,
-                BackColor = UITheme.ContentBackground
+                 BackColor = UITheme.PrimaryBackground
             };
             contentAreaGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
             contentAreaGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 80f)); // Header Row
@@ -90,12 +97,12 @@ namespace dasboardApplications
             Label logoLabel = new Label
             {
                 Text = "NEXUS",
-                Dock = DockStyle.Top,
-                Height = 60,
-                Font = new Font("Segoe UI Semibold", 20, FontStyle.Bold),
+                Width = 290, // Maximize width for 320px sidebar (15px padding each side)
+                Height = 80,
+                Font = new Font("Segoe UI Variable Display", 22, FontStyle.Bold), // Slightly smaller to guarantee fit
                 ForeColor = UITheme.AccentColor,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Margin = new Padding(0, 0, 0, 30)
+                Margin = new Padding(0, 0, 0, 40)
             };
             sidebarPanel.Controls.Add(logoLabel);
 
@@ -106,7 +113,7 @@ namespace dasboardApplications
                 Text = "DASHBOARD",
                 TextAlign = ContentAlignment.MiddleLeft,
                 Font = UITheme.HeaderFont,
-                BackColor = Color.Transparent,
+                BackColor = UITheme.HeaderBackground,
                 ForeColor = UITheme.TextPrimary,
                 Padding = new Padding(40, 0, 0, 0)
             };
@@ -123,11 +130,11 @@ namespace dasboardApplications
             sidebarPanel.Controls.Add(activeIndicator);
 
             // Feature Content Panel (Inside Canvas Panel)
-            contentPanel = new Panel
+             contentPanel = new Panel
             {
                 Dock = DockStyle.Fill,
-                BackColor = UITheme.SecondaryBackground,
-                Padding = new Padding(30),
+                BackColor = Color.Transparent, // Let parent background show through or use PrimaryBackground
+                Padding = new Padding(UITheme.FormMargin),
                 AutoScroll = true
             };
 
@@ -135,18 +142,17 @@ namespace dasboardApplications
             Panel canvasPanel = new Panel
             {
                 Dock = DockStyle.Fill,
+                BackColor = UITheme.PrimaryBackground,
                 Padding = new Padding(20)
             };
             contentAreaGrid.Controls.Add(canvasPanel, 0, 1);
             canvasPanel.Controls.Add(contentPanel);
 
             // Create buttons for each feature in Sidebar
-            int yPos = 120; // Start below logo
             foreach (var feature in _featureManager.GetFeatures())
             {
-                Button btn = CreateSidebarButton(feature, yPos);
+                Button btn = CreateSidebarButton(feature);
                 sidebarPanel.Controls.Add(btn);
-                yPos += 65;
             }
 
             activeIndicator.BringToFront();
@@ -158,30 +164,28 @@ namespace dasboardApplications
             Application.Exit();
         }
 
-        private Button CreateSidebarButton(IFeature initialInstance, int y)
+        private Button CreateSidebarButton(IFeature initialInstance)
         {
-            // We need a way to recreate this feature, so we find its type or store a way to recreate it.
-            // For now, we'll store the Type in the button and recreate it on click.
             Type featureType = initialInstance.GetType();
 
             Button btn = new Button
             {
                 Text = "      " + initialInstance.FeatureName,
-                Width = 230,
-                Height = 55,
-                Location = new Point(15, y),
+                Width = 220,
+                Height = 54,
                 FlatStyle = FlatStyle.Flat,
                 ForeColor = UITheme.TextSecondary,
                 BackColor = Color.Transparent,
                 Font = UITheme.ButtonFont,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Tag = featureType,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Margin = new Padding(0, 0, 0, 8)
             };
 
             btn.FlatAppearance.BorderSize = 0;
-            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(30, UITheme.AccentColor);
-            btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(20, UITheme.AccentColor);
+            btn.FlatAppearance.MouseDownBackColor = UITheme.SidebarButtonActive;
+            btn.FlatAppearance.MouseOverBackColor = UITheme.SidebarButtonHover;
 
             btn.MouseEnter += (s, e) => { if (btn != activeButton) btn.ForeColor = UITheme.TextPrimary; };
             btn.MouseLeave += (s, e) => { if (btn != activeButton) btn.ForeColor = UITheme.TextSecondary; };
@@ -204,11 +208,12 @@ namespace dasboardApplications
             }
 
             activeButton = btn;
-            activeButton.BackColor = Color.FromArgb(40, UITheme.AccentColor);
+             activeButton.BackColor = Color.FromArgb(20, UITheme.AccentColor);
             activeButton.ForeColor = UITheme.TextPrimary;
 
-            activeIndicator.Location = new Point(0, btn.Location.Y);
+            // Positioning indicator using control relative position in FlowPanel
             activeIndicator.Height = btn.Height;
+            activeIndicator.Location = new Point(0, btn.Top);
             activeIndicator.Visible = true;
             activeIndicator.BringToFront();
         }
@@ -236,8 +241,7 @@ namespace dasboardApplications
             form.FormBorderStyle = FormBorderStyle.None;
             form.Dock = DockStyle.Fill;
 
-            // Ensure child form uses our theme colors as base
-            form.BackColor = UITheme.SecondaryBackground;
+             form.BackColor = UITheme.PrimaryBackground;
 
             contentPanel.Controls.Add(form);
             form.Show();

@@ -15,11 +15,17 @@ namespace dasboardApplications.Models
     }
 
     /// <summary>
-    /// Represents the input parameters for a loan calculation.
-    /// This model holds all the user-provided data required to calculate EMI and schedules.
+    /// Represents the input parameters and state for a loan.
     /// </summary>
     public class LoanModel
     {
+        public int Id { get; set; }
+
+        /// <summary>
+        /// ID of the customer who took the loan.
+        /// </summary>
+        public int CustomerId { get; set; }
+
         /// <summary>
         /// Total principal amount borrowed.
         /// </summary>
@@ -44,5 +50,15 @@ namespace dasboardApplications.Models
         /// How often payments are made.
         /// </summary>
         public PaymentFrequency Frequency { get; set; }
+
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public string Status { get; set; } = "Active"; // e.g., Active, Paid, Defaulted
+        public double OutstandingBalance { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+
+        public string LoanSummary => $"Loan #{Id}: {LoanAmount:N2} ({Type})";
     }
 }

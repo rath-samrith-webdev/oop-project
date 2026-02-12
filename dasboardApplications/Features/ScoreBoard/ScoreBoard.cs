@@ -17,7 +17,7 @@ namespace dasboardApplications.Features.ScoreBoard
 
         public ScoreBoard()
         {
-            _dbService = ServiceContainer.Get<IDatabaseService>();
+            _dbService = ServiceContainer.GetService<IDatabaseService>();
             SetupUI();
             LoadScores();
         }
@@ -32,11 +32,11 @@ namespace dasboardApplications.Features.ScoreBoard
             {
                 Text = "GLOBAL LEADERBOARD",
                 Dock = DockStyle.Top,
-                Height = 40,
-                Font = UITheme.TitleFont,
-                ForeColor = UITheme.AccentColor,
-                TextAlign = ContentAlignment.MiddleLeft
+                Height = 60,
+                Padding = new Padding(0, 0, 0, 10),
+                TextAlign = ContentAlignment.BottomLeft
             };
+            UITheme.StyleLabel(titleLabel, UITheme.LabelLevel.Title);
             this.Controls.Add(titleLabel);
 
             dataGridView = new DataGridView
@@ -45,26 +45,9 @@ namespace dasboardApplications.Features.ScoreBoard
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 ReadOnly = true,
                 AllowUserToAddRows = false,
-                RowHeadersVisible = false,
-                BackgroundColor = UITheme.SecondaryBackground,
-                BorderStyle = BorderStyle.None,
-                GridColor = Color.FromArgb(40, 40, 45),
-                ForeColor = UITheme.TextPrimary,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect
             };
-
-            // Custom styling for headers and cells
-            dataGridView.EnableHeadersVisualStyles = false;
-            dataGridView.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(30, 30, 35);
-            dataGridView.ColumnHeadersDefaultCellStyle.ForeColor = UITheme.TextSecondary;
-            dataGridView.ColumnHeadersDefaultCellStyle.Font = UITheme.BodyFont;
-            dataGridView.ColumnHeadersHeight = 45;
-
-            dataGridView.DefaultCellStyle.BackColor = UITheme.SecondaryBackground;
-            dataGridView.DefaultCellStyle.ForeColor = UITheme.TextPrimary;
-            dataGridView.DefaultCellStyle.SelectionBackColor = Color.FromArgb(40, UITheme.AccentColor);
-            dataGridView.DefaultCellStyle.SelectionForeColor = UITheme.TextPrimary;
-            dataGridView.RowTemplate.Height = 35;
+            UITheme.StyleDataGrid(dataGridView);
 
             this.Controls.Add(dataGridView);
             this.Controls.Add(new Panel { Dock = DockStyle.Top, Height = 10 }); // Spacer

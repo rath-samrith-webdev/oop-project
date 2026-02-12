@@ -18,88 +18,109 @@ namespace dasboardApplications.Features
 
         private void SetupUI()
         {
-            this.BackColor = UITheme.SecondaryBackground;
+            this.BackColor = UITheme.PrimaryBackground;
             this.Padding = new Padding(40);
 
-            var layout = new FlowLayoutPanel
+            // Container for Bento Grid
+            Panel gridContainer = new Panel
             {
                 Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false,
                 AutoScroll = true
             };
-            this.Controls.Add(layout);
+            this.Controls.Add(gridContainer);
 
-            var welcomeLabel = new Label
+            Label welcomeLabel = new Label
             {
                 Text = "Welcome to Nexus",
-                Font = new Font("Segoe UI", 28, FontStyle.Bold), // Reduced from 32
-                ForeColor = UITheme.TextPrimary,
                 AutoSize = true,
-                Margin = new Padding(0, 0, 0, 10)
+                Location = new Point(0, 0)
             };
-            layout.Controls.Add(welcomeLabel);
+            UITheme.StyleLabel(welcomeLabel, UITheme.LabelLevel.Header);
+            gridContainer.Controls.Add(welcomeLabel);
 
-            var subLabel = new Label
+            Label subLabel = new Label
             {
-                Text = "Your premium suite for high-performance OOP applications.",
-                Font = new Font("Segoe UI", 14, FontStyle.Regular),
-                ForeColor = UITheme.TextSecondary,
+                Text = "The premium ecosystem for dynamic OOP applications.",
                 AutoSize = true,
-                Margin = new Padding(0, 0, 0, 40)
+                Location = new Point(0, 80)
             };
-            layout.Controls.Add(subLabel);
+            UITheme.StyleLabel(subLabel, UITheme.LabelLevel.SubHeader);
+            gridContainer.Controls.Add(subLabel);
 
-            // Quick Stats or Features List
-            AddFeatureCard(layout, "Car Racing", "Experience high-speed physics and score tracking.", "🏎️");
-            AddFeatureCard(layout, "Tic Tac Toe", "Classic game logic implemented with OOP patterns.", "🎮");
-            AddFeatureCard(layout, "Loan Manager", "Advanced financial calculations and amortization.", "💰");
-            AddFeatureCard(layout, "Score Board", "Real-time global leaderboard data.", "🏆");
+            // Bento Grid Implementation
+            int startY = 160;
+
+            // Large Card (Loan Manager)
+            AddBentoCard(gridContainer, "Loan Manager", "Financial suite for high-precision calculations.", "💰",
+                new Rectangle(0, startY, 600, 280), isLarge: true);
+
+            // Medium Card (Tic Tac Toe)
+            AddBentoCard(gridContainer, "Tic Tac Toe", "Dynamic grid logic and AI.", "🎮",
+                new Rectangle(624, startY, 350, 280));
+
+            // Medium Card (Car Racing)
+            AddBentoCard(gridContainer, "Car Racing", "Physics-based racing engine.", "🏎️",
+                new Rectangle(0, startY + 304, 350, 250));
+
+            // Small Card (Score Board)
+            AddBentoCard(gridContainer, "Score Board", "Live global rankings.", "🏆",
+                new Rectangle(374, startY + 304, 600, 250));
         }
 
-        private void AddFeatureCard(Control parent, string title, string description, string icon)
+        private void AddBentoCard(Control parent, string title, string description, string icon, Rectangle bounds, bool isLarge = false)
         {
-            var card = new Panel
+            Panel card = new Panel
             {
-                Width = parent.Width - 100, // Dynamic width based on parent
-                Height = 110,
-                BackColor = Color.FromArgb(30, 30, 35),
-                Margin = new Padding(0, 0, 0, 15),
-                Padding = new Padding(20)
+                Bounds = bounds,
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand
             };
             parent.Controls.Add(card);
 
-            // Resize card when parent resizes
-            parent.Resize += (s, e) => { card.Width = parent.Width - 100; };
+            bool isHovered = false;
 
-            var iconLabel = new Label
+            card.MouseEnter += (s, e) => { isHovered = true; card.Invalidate(); };
+            card.MouseLeave += (s, e) => { isHovered = false; card.Invalidate(); };
+
+            card.Paint += (s, e) =>
+            {
+                UITheme.DrawModernCard(e.Graphics, new Rectangle(0, 0, card.Width - 1, card.Height - 1), isHovered);
+            };
+
+            Label iconLabel = new Label
             {
                 Text = icon,
-                Font = new Font("Segoe UI", 24),
-                Location = new Point(20, 25),
-                AutoSize = true
+                Font = new Font("Segoe UI", isLarge ? 40 : 28),
+                Location = new Point(24, 24),
+                AutoSize = true,
+                BackColor = Color.Transparent
             };
             card.Controls.Add(iconLabel);
 
-            var titleLabel = new Label
+            Label titleLabel = new Label
             {
                 Text = title,
-                Font = UITheme.TitleFont,
-                ForeColor = UITheme.AccentColor,
-                Location = new Point(80, 20),
-                AutoSize = true
+                Location = new Point(24, isLarge ? 100 : 80),
+                AutoSize = true,
+                BackColor = Color.Transparent
             };
+            UITheme.StyleLabel(titleLabel, isLarge ? UITheme.LabelLevel.Header : UITheme.LabelLevel.SubHeader);
             card.Controls.Add(titleLabel);
 
-            var descLabel = new Label
+            Label descLabel = new Label
             {
                 Text = description,
-                Font = UITheme.BodyFont,
-                ForeColor = UITheme.TextSecondary,
-                Location = new Point(80, 50),
-                AutoSize = true
+                Location = new Point(24, isLarge ? 150 : 120),
+                Size = new Size(card.Width - 48, 80),
+                BackColor = Color.Transparent,
+                AutoEllipsis = true
             };
+            UITheme.StyleLabel(descLabel, UITheme.LabelLevel.Body);
             card.Controls.Add(descLabel);
+
+            card.Click += (s, e) => {
+                MessageBox.Show($"Opening {title}...", "Modern Navigation");
+            };
         }
     }
 }

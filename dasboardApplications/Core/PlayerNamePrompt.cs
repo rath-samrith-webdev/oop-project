@@ -17,19 +17,46 @@ namespace dasboardApplications.Core
         public PlayerNamePrompt(string title)
         {
             this.Text = title;
-            this.Size = new Size(300, 150);
+            this.Size = new Size(400, 220);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.StartPosition = FormStartPosition.CenterParent;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
+            this.BackColor = UITheme.PrimaryBackground;
 
-            Label label = new Label() { Left = 20, Top = 20, Text = "Enter your name:", Width = 250 };
-            nameTextBox = new TextBox() { Left = 20, Top = 50, Width = 240 };
-            okButton = new Button() { Text = "OK", Left = 190, Width = 70, Top = 80, DialogResult = DialogResult.OK };
+            Panel container = new Panel {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(30)
+            };
+            this.Controls.Add(container);
 
-            this.Controls.Add(label);
-            this.Controls.Add(nameTextBox);
-            this.Controls.Add(okButton);
+            Label label = new Label {
+                Text = "Enter your name:",
+                AutoSize = true,
+                ForeColor = UITheme.TextSecondary,
+                Font = UITheme.BodyFont,
+                Location = new Point(30, 30)
+            };
+
+            nameTextBox = new TextBox {
+                Width = 330,
+                Location = new Point(30, 65),
+                Font = UITheme.BodyFont
+            };
+            UITheme.StyleTextBox(nameTextBox);
+
+            okButton = new Button {
+                Text = "CONFIRM",
+                Width = 140,
+                Height = 40,
+                Location = new Point(220, 115),
+                DialogResult = DialogResult.OK
+            };
+            UITheme.StyleButton(okButton, isPrimary: true);
+
+            container.Controls.Add(label);
+            container.Controls.Add(nameTextBox);
+            container.Controls.Add(okButton);
             this.AcceptButton = okButton;
 
             okButton.Click += (s, e) => {
