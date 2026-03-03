@@ -18,65 +18,59 @@ namespace dasboardApplications.Features.LoanManagement
 
         private readonly LoanCalculatorService _calculatorService;
         private readonly ValidationService _validationService;
+        private readonly CustomerService _customerService;
+        private readonly LoanService _loanService;
 
         public LoanForm()
         {
             InitializeComponent();
-            _calculatorService = new LoanCalculatorService();
-            _validationService = new ValidationService();
+            _calculatorService = dasboardApplications.Core.ServiceContainer.GetService<LoanCalculatorService>();
+            _validationService = dasboardApplications.Core.ServiceContainer.GetService<ValidationService>();
+            _customerService = dasboardApplications.Core.ServiceContainer.GetService<CustomerService>();
+            _loanService = dasboardApplications.Core.ServiceContainer.GetService<LoanService>();
 
             ApplyModernTheme();
             LoadDefaults();
+            LoadCustomers();
+        }
+
+        private void LoadCustomers()
+        {
+            var customers = _customerService.GetAllCustomers();
+            cmbCustomer.DataSource = customers;
+            cmbCustomer.DisplayMember = "FullName";
+            cmbCustomer.ValueMember = "Id";
         }
 
         private void ApplyModernTheme()
         {
-            this.BackColor = UITheme.SecondaryBackground;
+            this.BackColor = UITheme.PrimaryBackground;
+            this.ForeColor = UITheme.TextPrimary;
 
-            // Labels and Title
-            var labels = this.Controls.Cast<Control>().Where(c => c is Label).ToList();
-            foreach (Label lbl in labels)
+            ApplyToAll(this.Controls);
+
+            UITheme.StyleButton(btnCalculate, isPrimary: true);
+            UITheme.StyleButton(btnSaveLoan, isPrimary: true);
+            UITheme.StyleButton(btnClear, isPrimary: false);
+            UITheme.StyleButton(btnRecordPayment, isPrimary: false);
+
+            UITheme.StyleDataGrid(dgvSchedule);
+        }
+
+        private void ApplyToAll(Control.ControlCollection controls)
+        {
+            foreach (Control ctrl in controls)
             {
-                lbl.ForeColor = UITheme.TextPrimary;
-                lbl.Font = UITheme.BodyFont;
+                if (ctrl is Label lbl) UITheme.StyleLabel(lbl, UITheme.LabelLevel.Body);
+                else if (ctrl is TextBox txt) UITheme.StyleTextBox(txt);
+                else if (ctrl is ComboBox cmb)
+                {
+                    cmb.BackColor = System.Drawing.Color.White;
+                    cmb.ForeColor = UITheme.TextPrimary;
+                    cmb.Font = UITheme.BodyFont;
+                }
+                else if (ctrl.HasChildren) ApplyToAll(ctrl.Controls);
             }
-
-            // Inputs
-            var inputs = this.Controls.Cast<Control>().Where(c => c is TextBox || c is ComboBox).ToList();
-            foreach (var ctrl in inputs)
-            {
-                ctrl.BackColor = Color.FromArgb(35, 35, 40);
-                ctrl.ForeColor = UITheme.TextPrimary;
-                ctrl.Font = UITheme.BodyFont;
-                if (ctrl is TextBox txt) txt.BorderStyle = BorderStyle.FixedSingle;
-            }
-
-            // Buttons
-            btnCalculate.BackColor = UITheme.AccentColor;
-            btnCalculate.FlatAppearance.BorderSize = 0;
-            btnCalculate.Font = UITheme.ButtonFont;
-
-            btnClear.BackColor = Color.Transparent;
-            btnClear.ForeColor = UITheme.TextSecondary;
-            btnClear.FlatAppearance.BorderColor = UITheme.TextMuted;
-            btnClear.Font = UITheme.ButtonFont;
-
-            // Panels
-            panel1.BackColor = Color.FromArgb(30, 30, 35);
-            panel2.BackColor = Color.Transparent;
-
-            label6.ForeColor = label7.ForeColor = label8.ForeColor = UITheme.TextSecondary;
-
-            // DataGrid
-            dgvSchedule.BackgroundColor = Color.FromArgb(30, 30, 35);
-            dgvSchedule.BorderStyle = BorderStyle.None;
-            dgvSchedule.GridColor = Color.FromArgb(45, 45, 50);
-            dgvSchedule.EnableHeadersVisualStyles = false;
-            dgvSchedule.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(40, 40, 45);
-            dgvSchedule.ColumnHeadersDefaultCellStyle.ForeColor = UITheme.TextSecondary;
-            dgvSchedule.DefaultCellStyle.BackColor = Color.FromArgb(30, 30, 35);
-            dgvSchedule.DefaultCellStyle.ForeColor = UITheme.TextPrimary;
-            dgvSchedule.DefaultCellStyle.SelectionBackColor = Color.FromArgb(50, UITheme.AccentColor);
         }
 
         private void LoadDefaults()
@@ -114,6 +108,79 @@ namespace dasboardApplications.Features.LoanManagement
             catch (Exception ex)
             {
                 MessageBox.Show($"An error occurred during calculation: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnSaveLoan_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!ValidateInputs()) return;
+                if (cmbCustomer.SelectedValue == null)
+                {
+                    MessageBox.Show("Please select a customer.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var loan = new LoanModel
+                {
+                    CustomerId = (int)cmbCustomer.SelectedValue,
+                    LoanAmount = double.Parse(txtLoanAmount.Text),
+                    AnnualInterestRate = double.Parse(txtInterestRate.Text),
+                    TenureInMonths = int.Parse(txtTenure.Text),
+                    Type = (LoanType)cmbLoanType.SelectedItem,
+                    Frequency = (PaymentFrequency)cmbFrequency.SelectedItem,
+                    StartDate = DateTime.Now,
+                    EndDate = DateTime.Now.AddMonths(int.Parse(txtTenure.Text)),
+                    Status = "Active",
+                    OutstandingBalance = double.Parse(txtLoanAmount.Text),
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+
+                _loanService.CreateLoan(loan);
+                MessageBox.Show("Loan saved successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                // Trigger calculation to show schedule
+                btnCalculate_Click(sender, e);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while saving the loan: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnRecordPayment_Click(object sender, EventArgs e)
+        {
+            if (cmbCustomer.SelectedValue == null)
+            {
+                MessageBox.Show("Please select a customer first.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var loans = _loanService.GetLoansByCustomer((int)cmbCustomer.SelectedValue);
+            if (loans.Count == 0)
+            {
+                MessageBox.Show("No active loans found for this customer.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // For simplicity, we'll pick the first active loan or show a selection if multiple.
+            // Here we'll just open the PaymentForm with the first loan.
+            var loan = loans.FirstOrDefault(l => l.Status == "Active");
+            if (loan == null)
+            {
+                MessageBox.Show("No active loans found for this customer.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (var paymentForm = new PaymentForm(loan))
+            {
+                if (paymentForm.ShowDialog() == DialogResult.OK)
+                {
+                    // Update UI if needed
+                    MessageBox.Show("Payment recorded.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
         }
 

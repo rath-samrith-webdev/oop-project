@@ -17,6 +17,8 @@ namespace dasboardApplications.Services
             InitializeDatabase();
         }
 
+        public string GetConnectionString() => _connectionString;
+
         private void InitializeDatabase()
         {
             using (var connection = new SqliteConnection(_connectionString))
@@ -30,6 +32,66 @@ namespace dasboardApplications.Services
                         GameType TEXT NOT NULL,
                         Score INTEGER NOT NULL,
                         Date TEXT NOT NULL
+                    );
+
+                    CREATE TABLE IF NOT EXISTS Users (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        Username TEXT NOT NULL UNIQUE,
+                        PasswordHash TEXT NOT NULL,
+                        Salt TEXT NOT NULL,
+                        Role TEXT NOT NULL,
+                        CreatedAt TEXT NOT NULL,
+                        UpdatedAt TEXT NOT NULL
+                    );
+
+                    CREATE TABLE IF NOT EXISTS Customers (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        FullName TEXT NOT NULL,
+                        Email TEXT NOT NULL,
+                        PhoneNumber TEXT NOT NULL,
+                        Address TEXT,
+                        KycDocuments TEXT,
+                        CreatedAt TEXT NOT NULL,
+                        UpdatedAt TEXT NOT NULL
+                    );
+
+                    CREATE TABLE IF NOT EXISTS Loans (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        CustomerId INTEGER NOT NULL,
+                        LoanAmount REAL NOT NULL,
+                        AnnualInterestRate REAL NOT NULL,
+                        TenureInMonths INTEGER NOT NULL,
+                        Type TEXT NOT NULL,
+                        Frequency TEXT NOT NULL,
+                        StartDate TEXT NOT NULL,
+                        EndDate TEXT NOT NULL,
+                        Status TEXT NOT NULL,
+                        OutstandingBalance REAL NOT NULL,
+                        CreatedAt TEXT NOT NULL,
+                        UpdatedAt TEXT NOT NULL,
+                        FOREIGN KEY(CustomerId) REFERENCES Customers(Id)
+                    );
+
+                    CREATE TABLE IF NOT EXISTS Payments (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        LoanId INTEGER NOT NULL,
+                        PaymentDate TEXT NOT NULL,
+                        AmountPaid REAL NOT NULL,
+                        PaymentType TEXT NOT NULL,
+                        Status TEXT NOT NULL,
+                        CreatedAt TEXT NOT NULL,
+                        UpdatedAt TEXT NOT NULL,
+                        FOREIGN KEY(LoanId) REFERENCES Loans(Id)
+                    );
+
+                    CREATE TABLE IF NOT EXISTS AuditLogs (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        UserId INTEGER NOT NULL,
+                        Action TEXT NOT NULL,
+                        EntityName TEXT NOT NULL,
+                        EntityId INTEGER NOT NULL,
+                        Changes TEXT,
+                        Timestamp TEXT NOT NULL
                     );";
                 command.ExecuteNonQuery();
             }

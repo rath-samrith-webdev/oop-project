@@ -1,36 +1,41 @@
 using System;
 using System.Collections.Generic;
-using dasboardApplications.Interfaces;
 using dasboardApplications.Services;
+using dasboardApplications.Interfaces;
 
 namespace dasboardApplications.Core
 {
-    /// <summary>
-    /// Simple Service Locator / DI Container for the application.
-    /// Manages the lifecycle of core services.
-    /// </summary>
     public static class ServiceContainer
     {
         private static readonly Dictionary<Type, object> _services = new Dictionary<Type, object>();
 
         static ServiceContainer()
         {
-            // Register default services
-            Register<IDatabaseService>(new DatabaseService());
+            var dbService = new DatabaseService();
+            var encryptionService = new EncryptionService();
+            var auditService = new AuditService(dbService);
+            var authService = new AuthService(dbService);
+            var customerService = new CustomerService(dbService, encryptionService, auditService);
+            var loanService = new LoanService(dbService, auditService);
+            var paymentService = new PaymentService(dbService, loanService, auditService);
+            var loanCalculatorService = new LoanCalculatorService();
+            var validationService = new ValidationService();
+
+            _services[typeof(IDatabaseService)] = dbService;
+            _services[typeof(DatabaseService)] = dbService;
+            _services[typeof(EncryptionService)] = encryptionService;
+            _services[typeof(AuditService)] = auditService;
+            _services[typeof(AuthService)] = authService;
+            _services[typeof(CustomerService)] = customerService;
+            _services[typeof(LoanService)] = loanService;
+            _services[typeof(PaymentService)] = paymentService;
+            _services[typeof(LoanCalculatorService)] = loanCalculatorService;
+            _services[typeof(ValidationService)] = validationService;
         }
 
-        public static void Register<T>(T service) where T : class
+        public static T GetService<T>()
         {
-            _services[typeof(T)] = service;
-        }
-
-        public static T Get<T>() where T : class
-        {
-            if (_services.TryGetValue(typeof(T), out var service))
-            {
-                return (T)service;
-            }
-            throw new Exception($"Service {typeof(T).Name} not registered.");
+            return (T)_services[typeof(T)];
         }
     }
 }

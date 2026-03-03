@@ -30,14 +30,14 @@
         {
             titleLabel = new Label();
             userNameLabel = new Label();
-            textBox1 = new TextBox();
-            textBox2 = new TextBox();
+            usernameTextBox = new TextBox();
+            passwordTextBox = new TextBox();
             passwordLabel = new Label();
             signInButton = new Button();
             SuspendLayout();
-            // 
+            //
             // titleLabel
-            // 
+            //
             titleLabel.AutoSize = true;
             titleLabel.Font = new Font("Agency FB", 36F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
             titleLabel.Location = new Point(220, 51);
@@ -45,41 +45,42 @@
             titleLabel.Size = new Size(131, 59);
             titleLabel.TabIndex = 0;
             titleLabel.Text = "Sign in";
-            // 
+            //
             // userNameLabel
-            // 
+            //
             userNameLabel.AutoSize = true;
             userNameLabel.Location = new Point(90, 125);
             userNameLabel.Name = "userNameLabel";
             userNameLabel.Size = new Size(63, 15);
             userNameLabel.TabIndex = 1;
             userNameLabel.Text = "User name";
-            // 
-            // textBox1
-            // 
-            textBox1.Location = new Point(90, 143);
-            textBox1.Name = "textBox1";
-            textBox1.Size = new Size(430, 23);
-            textBox1.TabIndex = 2;
-            // 
-            // textBox2
-            // 
-            textBox2.Location = new Point(90, 197);
-            textBox2.Name = "textBox2";
-            textBox2.Size = new Size(430, 23);
-            textBox2.TabIndex = 3;
-            // 
+            //
+            // usernameTextBox
+            //
+            usernameTextBox.Location = new Point(90, 143);
+            usernameTextBox.Name = "usernameTextBox";
+            usernameTextBox.Size = new Size(430, 23);
+            usernameTextBox.TabIndex = 2;
+            //
+            // passwordTextBox
+            //
+            passwordTextBox.Location = new Point(90, 197);
+            passwordTextBox.Name = "passwordTextBox";
+            passwordTextBox.Size = new Size(430, 23);
+            passwordTextBox.TabIndex = 3;
+            passwordTextBox.UseSystemPasswordChar = true;
+            //
             // passwordLabel
-            // 
+            //
             passwordLabel.AutoSize = true;
             passwordLabel.Location = new Point(88, 178);
             passwordLabel.Name = "passwordLabel";
             passwordLabel.Size = new Size(88, 15);
             passwordLabel.TabIndex = 4;
             passwordLabel.Text = "Password Label";
-            // 
+            //
             // signInButton
-            // 
+            //
             signInButton.Location = new Point(380, 253);
             signInButton.Name = "signInButton";
             signInButton.Size = new Size(140, 27);
@@ -87,16 +88,16 @@
             signInButton.Text = "Sign in";
             signInButton.UseVisualStyleBackColor = true;
             signInButton.Click += signInButton_Click;
-            // 
+            //
             // AuthenticationForm
-            // 
+            //
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(583, 376);
             Controls.Add(signInButton);
             Controls.Add(passwordLabel);
-            Controls.Add(textBox2);
-            Controls.Add(textBox1);
+            Controls.Add(passwordTextBox);
+            Controls.Add(usernameTextBox);
             Controls.Add(userNameLabel);
             Controls.Add(titleLabel);
             Name = "AuthenticationForm";
@@ -109,8 +110,8 @@
 
         private Label titleLabel;
         private Label userNameLabel;
-        private TextBox textBox1;
-        private TextBox textBox2;
+        private TextBox usernameTextBox;
+        private TextBox passwordTextBox;
         private Label passwordLabel;
         private Button signInButton;
     }

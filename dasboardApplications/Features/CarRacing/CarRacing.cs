@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Drawing;
 using System.Windows.Forms;
 using System.IO;
@@ -13,7 +15,6 @@ namespace dasboardApplications.Features.CarRacing
         public Form GetForm() => this;
 
         private int carSpeed = 5;
-        private int roadSpeed = 5;
         private bool gameOver = false;
         private CarRacingEngine _engine;
         private IDatabaseService _dbService;
@@ -26,13 +27,15 @@ namespace dasboardApplications.Features.CarRacing
         private Label levelLabel;
         private Button pauseButton;
         private Button startResumeButton;
+        private int lives = 3;
+        private Label healthLabel;
         private int backgroundOffset = 0;
         private bool isPaused = false;
 
         public CarRacing()
         {
             _engine = new CarRacingEngine();
-            _dbService = ServiceContainer.Get<IDatabaseService>();
+            _dbService = ServiceContainer.GetService<IDatabaseService>();
 
             _engine.OnScoreChanged += s => { if (scoreLabel != null) scoreLabel.Text = $"SCORE: {s}"; };
             _engine.OnLevelChanged += l => { if (levelLabel != null) levelLabel.Text = $"LEVEL: {l}"; };
@@ -50,32 +53,48 @@ namespace dasboardApplications.Features.CarRacing
             Panel scoreContainer = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 60,
-                BackColor = Color.FromArgb(15, 15, 20),
-                Padding = new Padding(20, 10, 20, 10)
+                Height = 64,
+                BackColor = Color.FromArgb(10, 10, 15),
+                Padding = new Padding(32, 0, 32, 0)
             };
             this.Controls.Add(scoreContainer);
 
             scoreLabel = new Label
             {
                 Text = "SCORE: 0",
-                Font = UITheme.HeaderFont,
-                ForeColor = UITheme.AccentColor,
                 AutoSize = true,
-                Dock = DockStyle.Left
+                Dock = DockStyle.Left,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Height = 64
             };
+            UITheme.StyleLabel(scoreLabel, UITheme.LabelLevel.SubHeader);
+            scoreLabel.ForeColor = UITheme.AccentColor;
             scoreContainer.Controls.Add(scoreLabel);
 
             levelLabel = new Label
             {
                 Text = "LEVEL: 1",
-                Font = UITheme.HeaderFont,
-                ForeColor = Color.Gold,
                 AutoSize = true,
                 Dock = DockStyle.Left,
-                Padding = new Padding(20, 0, 0, 0)
+                Padding = new Padding(24, 0, 0, 0),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Height = 64
             };
+            UITheme.StyleLabel(levelLabel, UITheme.LabelLevel.SubHeader);
+            levelLabel.ForeColor = Color.Gold;
             scoreContainer.Controls.Add(levelLabel);
+
+            healthLabel = new Label
+            {
+                Text = "❤️❤️❤️",
+                AutoSize = true,
+                Dock = DockStyle.Left,
+                Padding = new Padding(24, 0, 0, 0),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Height = 64
+            };
+            UITheme.StyleLabel(healthLabel, UITheme.LabelLevel.SubHeader);
+            scoreContainer.Controls.Add(healthLabel);
 
             Label instructions = new Label
             {
@@ -88,55 +107,109 @@ namespace dasboardApplications.Features.CarRacing
             };
             instructions.Controls.Add(new Panel { Dock = DockStyle.Right, Width = 20 }); // Small spacer
 
-            startResumeButton = new Button
+            Panel hudControls = new Panel
             {
-                Text = "START",
-                Size = new Size(80, 30),
-                BackColor = Color.FromArgb(0, 200, 83),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
                 Dock = DockStyle.Right,
-                Margin = new Padding(10, 5, 10, 5)
+                Width = 260,
+                Padding = new Padding(0)
             };
-            startResumeButton.FlatAppearance.BorderSize = 0;
-            startResumeButton.Click += (s, e) => ToggleGame();
-            scoreContainer.Controls.Add(startResumeButton);
+            scoreContainer.Controls.Add(hudControls);
 
             pauseButton = new Button
             {
                 Text = "PAUSE",
-                Size = new Size(80, 30),
-                BackColor = Color.FromArgb(255, 152, 0),
+                Width = 110,
+                Height = 36,
+                Location = new Point(130, 14),
+                BackColor = UITheme.WarningColor,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                Dock = DockStyle.Right,
-                Margin = new Padding(10, 5, 10, 5),
+                Font = UITheme.ButtonFont,
                 Enabled = false
             };
             pauseButton.FlatAppearance.BorderSize = 0;
             pauseButton.Click += (s, e) => TogglePause();
-            scoreContainer.Controls.Add(pauseButton);
+            hudControls.Controls.Add(pauseButton);
 
-            playerCar = new PictureBox { Size = new Size(50, 80), BackColor = Color.Transparent, Top = 450, Left = 175, SizeMode = PictureBoxSizeMode.StretchImage };
+            startResumeButton = new Button
+            {
+                Text = "START",
+                Width = 110,
+                Height = 36,
+                Location = new Point(10, 14),
+                BackColor = UITheme.SuccessColor,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = UITheme.ButtonFont
+            };
+            startResumeButton.FlatAppearance.BorderSize = 0;
+            startResumeButton.Click += (s, e) => ToggleGame();
+            hudControls.Controls.Add(startResumeButton);
+
+            playerCar = new PictureBox { Size = new Size(40, 70), BackColor = Color.Transparent, Top = 450, Left = 175, SizeMode = PictureBoxSizeMode.StretchImage };
             string assetsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets");
-            try { playerCar.Image = Image.FromFile(Path.Combine(assetsPath, "player-car.png")); } catch { playerCar.BackColor = Color.Blue; }
+            try { playerCar.Image = Image.FromFile(Path.Combine(assetsPath, "player-car.png")); } catch { /* Image handled by Paint */ }
             this.Controls.Add(playerCar);
 
-            enemyCar1 = new PictureBox { Size = new Size(50, 80), BackColor = Color.Transparent, Top = -100, Left = 50, SizeMode = PictureBoxSizeMode.StretchImage };
-            try { enemyCar1.Image = Image.FromFile(Path.Combine(assetsPath, "obstical.png")); } catch { enemyCar1.BackColor = Color.Red; }
+            enemyCar1 = new PictureBox { Size = new Size(40, 70), BackColor = Color.Transparent, Top = -100, Left = 50, SizeMode = PictureBoxSizeMode.StretchImage };
+            try { enemyCar1.Image = Image.FromFile(Path.Combine(assetsPath, "obstical.png")); } catch { /* Image handled by Paint */ }
             this.Controls.Add(enemyCar1);
 
-            enemyCar2 = new PictureBox { Size = new Size(50, 80), BackColor = Color.Transparent, Top = -400, Left = 250, SizeMode = PictureBoxSizeMode.StretchImage };
-            try { enemyCar2.Image = Image.FromFile(Path.Combine(assetsPath, "obstical.png")); } catch { enemyCar2.BackColor = Color.Green; }
+            enemyCar2 = new PictureBox { Size = new Size(40, 70), BackColor = Color.Transparent, Top = -400, Left = 250, SizeMode = PictureBoxSizeMode.StretchImage };
+            try { enemyCar2.Image = Image.FromFile(Path.Combine(assetsPath, "obstical.png")); } catch { /* Image handled by Paint */ }
             this.Controls.Add(enemyCar2);
 
+            playerCar.Paint += (s, e) => { if (playerCar.Image == null) DrawCar(e.Graphics, playerCar.ClientRectangle, UITheme.AccentColor); };
+            enemyCar1.Paint += (s, e) => { if (enemyCar1.Image == null) DrawCar(e.Graphics, enemyCar1.ClientRectangle, UITheme.DangerColor); };
+            enemyCar2.Paint += (s, e) => { if (enemyCar2.Image == null) DrawCar(e.Graphics, enemyCar2.ClientRectangle, Color.ForestGreen); };
+
             this.Paint += CarRacing_Paint;
+
             gameTimer = new System.Windows.Forms.Timer { Interval = 20 };
             gameTimer.Tick += GameTimer_Tick;
-
             this.KeyDown += CarRacing_KeyDown;
+        }
+
+        private void DrawCar(Graphics g, Rectangle rect, Color bodyColor)
+        {
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            int wheelW = 8;
+            int wheelH = 12;
+            using (SolidBrush wheelBrush = new SolidBrush(Color.FromArgb(40, 40, 40)))
+            {
+                g.FillRectangle(wheelBrush, 0, 10, wheelW, wheelH); // TL
+                g.FillRectangle(wheelBrush, rect.Width - wheelW, 10, wheelW, wheelH); // TR
+                g.FillRectangle(wheelBrush, 0, rect.Height - 22, wheelW, wheelH); // BL
+                g.FillRectangle(wheelBrush, rect.Width - wheelW, rect.Height - 22, wheelW, wheelH); // BR
+            }
+
+            using (SolidBrush bodyBrush = new SolidBrush(bodyColor))
+            {
+                Rectangle body = new Rectangle(4, 0, rect.Width - 8, rect.Height);
+                FillRoundedRect(g, bodyBrush, body, 10);
+
+                using (SolidBrush glassBrush = new SolidBrush(Color.FromArgb(180, 220, 255)))
+                {
+                    Rectangle windshield = new Rectangle(body.X + 4, 15, body.Width - 8, 12);
+                    FillRoundedRect(g, glassBrush, windshield, 4);
+                }
+            }
+        }
+
+
+        private void FillRoundedRect(Graphics g, Brush brush, Rectangle rect, int radius)
+        {
+            using (System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath())
+            {
+                int diameter = radius * 2;
+                path.AddArc(rect.X, rect.Y, diameter, diameter, 180, 90);
+                path.AddArc(rect.Right - diameter, rect.Y, diameter, diameter, 270, 90);
+                path.AddArc(rect.Right - diameter, rect.Bottom - diameter, diameter, diameter, 0, 90);
+                path.AddArc(rect.X, rect.Bottom - diameter, diameter, diameter, 90, 90);
+                path.CloseFigure();
+                g.FillPath(brush, path);
+            }
         }
 
         private void ToggleGame()
@@ -251,6 +324,27 @@ namespace dasboardApplications.Features.CarRacing
                 enemyCar2.Top = -100;
                 enemyCar2.Left = _engine.GetRandomEnemyX(200, 300);
                 _engine.IncrementScore();
+            }
+
+            if (_engine.CheckCollision())
+            {
+                lives--;
+                healthLabel.Text = string.Concat(Enumerable.Repeat("❤️", Math.Max(0, lives))) +
+                                  string.Concat(Enumerable.Repeat("🖤", Math.Max(0, 3 - lives)));
+
+                if (lives <= 0)
+                {
+                    _engine.TriggerGameOver($"CRASHED! Out of lives! Score: {scoreLabel.Text.Replace("SCORE: ", "")}");
+                    return;
+                }
+                else
+                {
+                    // Reset enemies on hit but keep playing
+                    enemyCar1.Top = -100;
+                    enemyCar2.Top = -400;
+                    this.Invalidate();
+                    return;
+                }
             }
 
             _engine.Update();
