@@ -426,17 +426,28 @@ namespace dasboardApplications.Features.CarRacing
         {
             gameOver = true;
             gameTimer.Stop();
+
+            // Show outcome MessageBox first
             MessageBox.Show(message + "\n\nPress 'R' to Restart!", "Car Racing");
 
+            // Prompt for name after dismissal
             using (var prompt = new PlayerNamePrompt("Enter Your Name"))
             {
                 if (prompt.ShowDialog() == DialogResult.OK)
                 {
+                    int currentScore = 0;
+                    if (scoreLabel != null)
+                    {
+                        // Safely parse score from label
+                        string scoreText = scoreLabel.Text.Replace("SCORE: ", "");
+                        int.TryParse(scoreText, out currentScore);
+                    }
+
                     _scoreRepository.Add(new ScoreRecord
                     {
                         PlayerName = prompt.PlayerName,
                         GameType = "CarRacing",
-                        Score = int.Parse(scoreLabel.Text.Replace("SCORE: ", "")),
+                        Score = currentScore,
                         Date = DateTime.Now
                     });
                 }
