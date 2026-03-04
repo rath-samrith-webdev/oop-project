@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("dasboardApplications")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5147ebd5d8346f90812d77df5ff18d5b3ca5d293")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e4989ed046dd42acfb90dbab7e2de30251f5dc67")]
 [assembly: System.Reflection.AssemblyProductAttribute("dasboardApplications")]
 [assembly: System.Reflection.AssemblyTitleAttribute("dasboardApplications")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

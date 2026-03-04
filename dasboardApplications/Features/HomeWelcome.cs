@@ -14,6 +14,7 @@ namespace dasboardApplications.Features
         private readonly IRepository<Customer> _customerRepo;
         private readonly IRepository<LoanModel> _loanRepo;
         private readonly IRepository<AuditLog> _auditRepo;
+        private readonly IDatabaseService _dbService;
 
         public string FeatureName => "Home";
         public Form GetForm() => this;
@@ -23,6 +24,7 @@ namespace dasboardApplications.Features
             _customerRepo = customerRepo;
             _loanRepo = loanRepo;
             _auditRepo = auditRepo;
+            _dbService = ServiceContainer.GetService<IDatabaseService>();
             SetupUI();
         }
 
@@ -39,21 +41,23 @@ namespace dasboardApplications.Features
             };
             this.Controls.Add(gridContainer);
 
-            // Hero Section
+            // Hero Section - Add FIRST to ensure it's at the top of the Dock stack
             Panel heroPanel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 250,
+                Height = 200, // Slightly more height for better breathing room
                 BackColor = Color.FromArgb(15, UITheme.AccentColor),
-                Margin = new Padding(0, 0, 0, 40)
+                Margin = new Padding(0, 0, 0, 20),
+                Padding = new Padding(40, 45, 40, 40)
             };
             gridContainer.Controls.Add(heroPanel);
 
+            // Labels for Hero Section
             Label welcomeLabel = new Label
             {
                 Text = "Welcome to Nexus Dashboard",
                 AutoSize = true,
-                Location = new Point(40, 45),
+                Dock = DockStyle.Top,
                 BackColor = Color.Transparent
             };
             UITheme.StyleLabel(welcomeLabel, UITheme.LabelLevel.Header);
@@ -63,42 +67,61 @@ namespace dasboardApplications.Features
             {
                 Text = $"System Overview • {DateTime.Now:MMMM dd, yyyy}",
                 AutoSize = true,
-                Location = Point.Add(welcomeLabel.Location, new Size(0, 50)),
-                BackColor = Color.Transparent,
-                ForeColor = UITheme.TextSecondary
+                Dock = DockStyle.Top,
+                Padding = new Padding(0, 15, 0, 0), // Added gap between texts
+                ForeColor = UITheme.TextSecondary,
+                BackColor = Color.Transparent
             };
             UITheme.StyleLabel(subLabel, UITheme.LabelLevel.SubHeader);
             heroPanel.Controls.Add(subLabel);
 
-            // Bento Grid Implementation
-            int startY = 220;
+            // Bento Grid Implementation using TableLayoutPanel for responsiveness
+            TableLayoutPanel bentoGrid = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                ColumnCount = 3,
+                RowCount = 2,
+                Height = 620, // Sum of row heights
+                Margin = new Padding(0, 20, 0, 0) // Gap between hero and grid
+            };
+            bentoGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
+            bentoGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
+            bentoGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
+            bentoGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+            bentoGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+            gridContainer.Controls.Add(bentoGrid);
+
+            // Ensure Z-order puts hero panel at the top (outermost dock)
+            heroPanel.SendToBack();
+            bentoGrid.BringToFront();
+
             var customersCount = _customerRepo.GetAll().Count();
             var loansCount = _loanRepo.GetAll().Count();
             var recentAudits = _auditRepo.GetAll().Take(5).ToList();
 
             // Row 1: Key Stats
-            AddBentoCard(gridContainer, "Total Customers", $"{customersCount} Active Records", "👥",
-                new Rectangle(40, startY, 320, 200), UITheme.AccentColor);
+            AddBentoCard(bentoGrid, "Total Customers", $"{customersCount} Active Records", "👥", 0, 0, UITheme.AccentColor);
+            AddBentoCard(bentoGrid, "Loan Portfolio", $"{loansCount} Managed Loans", "💼", 0, 1, UITheme.SecondaryAccent);
+            AddBentoCard(bentoGrid, "System Status", "All Services Operational", "⚡", 0, 2, UITheme.SuccessColor);
 
-            AddBentoCard(gridContainer, "Loan Portfolio", $"{loansCount} Managed Loans", "💼",
-                new Rectangle(400, startY, 320, 200), UITheme.SecondaryAccent);
+            // Row 2: Recent Activity (Spans 2 columns)
+            AddActivityCard(bentoGrid, "Recent Activity", recentAudits, 1, 0, 2);
 
-            AddBentoCard(gridContainer, "System Status", "All Services Operational", "⚡",
-                new Rectangle(760, startY, 320, 200), UITheme.SuccessColor);
-
-            // Row 2: Recent Activity
-            AddActivityCard(gridContainer, "Recent Activity", recentAudits,
-                new Rectangle(40, startY + 240, 680, 360));
-
-            // Row 2 Sidebar: Quick Actions
-            AddBentoCard(gridContainer, "Leaderboard", "Real-time simulation active", "🏆",
-                new Rectangle(760, startY + 240, 320, 360), UITheme.WarningColor);
+            // Row 2 Sidebar: Leaderboard
+            var topScores = _dbService.GetTopScores(3);
+            AddLeaderboardCard(bentoGrid, "Top Players", topScores, 1, 2);
         }
 
-        private void AddActivityCard(Control parent, string title, List<AuditLog> logs, Rectangle bounds)
+        private void AddActivityCard(TableLayoutPanel parent, string title, List<AuditLog> logs, int row, int col, int colSpan = 1)
         {
-            Panel card = new Panel { Bounds = bounds, BackColor = Color.Transparent };
-            parent.Controls.Add(card);
+            Panel card = new Panel {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(10),
+                BackColor = Color.Transparent,
+                Padding = new Padding(24)
+            };
+            parent.Controls.Add(card, col, row);
+            if (colSpan > 1) parent.SetColumnSpan(card, colSpan);
 
             card.Paint += (s, e) => {
                 var rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
@@ -107,40 +130,63 @@ namespace dasboardApplications.Features
                     e.Graphics.DrawLine(pen, 20, 0, card.Width - 20, 0);
             };
 
-            Label titleLabel = new Label { Text = title, Location = new Point(24, 24), AutoSize = true };
+            Label titleLabel = new Label {
+                Text = title,
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 25) // Added clear bottom margin
+            };
             UITheme.StyleLabel(titleLabel, UITheme.LabelLevel.SubHeader);
             card.Controls.Add(titleLabel);
 
-            int itemY = 70;
+            Panel logsContainer = new Panel {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(0, 10, 0, 0),
+                AutoScroll = true
+            };
+            card.Controls.Add(logsContainer);
+
+            // Add logs using BringToFront to ensure newest (first in list) stays at the top
             foreach (var log in logs)
             {
                 Label logLabel = new Label {
                     Text = $"• {log.Action} {log.EntityName}: {log.Timestamp:HH:mm}",
-                    Location = new Point(24, itemY),
-                    Size = new Size(card.Width - 48, 30),
+                    Dock = DockStyle.Top,
+                    Height = 35,
                     ForeColor = UITheme.TextSecondary,
-                    Font = UITheme.BodyFont
+                    Font = UITheme.BodyFont,
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    AutoEllipsis = true,
+                    Padding = new Padding(5, 0, 0, 0)
                 };
-                card.Controls.Add(logLabel);
-                itemY += 40;
+                logsContainer.Controls.Add(logLabel);
+                logLabel.BringToFront(); // Moves this to index 0, pushing previous ones to higher indices (top)
             }
 
             if (logs.Count == 0)
             {
-                Label emptyLabel = new Label { Text = "No recent activity recorded.", Location = new Point(24, 70), AutoSize = true, ForeColor = UITheme.TextMuted };
-                card.Controls.Add(emptyLabel);
+                Label emptyLabel = new Label {
+                    Text = "No recent activity recorded.",
+                    Dock = DockStyle.Top,
+                    AutoSize = true,
+                    ForeColor = UITheme.TextMuted,
+                    Margin = new Padding(0, 10, 0, 0)
+                };
+                logsContainer.Controls.Add(emptyLabel);
             }
         }
 
-        private void AddBentoCard(Control parent, string title, string description, string icon, Rectangle bounds, Color accentColor)
+        private void AddBentoCard(TableLayoutPanel parent, string title, string description, string icon, int row, int col, Color accentColor)
         {
             Panel card = new Panel
             {
-                Bounds = bounds,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(10),
                 BackColor = Color.Transparent,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Padding = new Padding(24)
             };
-            parent.Controls.Add(card);
+            parent.Controls.Add(card, col, row);
 
             bool isHovered = false;
 
@@ -152,52 +198,151 @@ namespace dasboardApplications.Features
                 var rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
                 UITheme.DrawModernCard(e.Graphics, rect, isHovered);
 
-                // Add a colored indicator/border at the top if hovered or always
                 using (var pen = new Pen(accentColor, 2))
                 {
                     e.Graphics.DrawLine(pen, 20, 0, card.Width - 20, 0);
                 }
             };
 
-            Label iconLabel = new Label
-            {
-                Text = icon,
-                Font = new Font("Segoe UI", 32),
-                Location = new Point(24, 24),
-                AutoSize = true,
-                BackColor = Color.Transparent,
-                ForeColor = accentColor
-            };
-            card.Controls.Add(iconLabel);
-
-            Label titleLabel = new Label
-            {
-                Text = title,
-                Location = new Point(24, 90),
-                AutoSize = true,
-                BackColor = Color.Transparent
-            };
-            UITheme.StyleLabel(titleLabel, UITheme.LabelLevel.SubHeader);
-            card.Controls.Add(titleLabel);
-
             Label descLabel = new Label
             {
                 Text = description,
-                Location = new Point(24, 130),
-                Size = new Size(card.Width - 48, 80),
+                Dock = DockStyle.Fill,
                 BackColor = Color.Transparent,
                 AutoEllipsis = true,
-                ForeColor = UITheme.TextSecondary
+                ForeColor = UITheme.TextSecondary,
+                TextAlign = ContentAlignment.TopLeft,
+                Padding = new Padding(0, 5, 0, 0)
             };
             UITheme.StyleLabel(descLabel, UITheme.LabelLevel.Body);
             card.Controls.Add(descLabel);
 
+            Label titleLabel = new Label
+            {
+                Text = title,
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0, 5, 0, 5)
+            };
+            UITheme.StyleLabel(titleLabel, UITheme.LabelLevel.SubHeader);
+            card.Controls.Add(titleLabel);
+
+            Label iconLabel = new Label
+            {
+                Text = icon,
+                Font = new Font("Segoe UI", 32),
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                BackColor = Color.Transparent,
+                ForeColor = accentColor,
+                Margin = new Padding(0, 0, 0, 10)
+            };
+            card.Controls.Add(iconLabel);
+
             card.Click += (s, e) => {
-                // Future: Navigate to feature
                 MessageBox.Show($"Opening {title}...", "Nexus Dashboard");
             };
 
             UITheme.AnimateControlEntrance(card, 100);
+        }
+
+        private void AddLeaderboardCard(TableLayoutPanel parent, string title, List<(string Player, string Game, int Score, DateTime Date)> topScores, int row, int col)
+        {
+            Panel card = new Panel {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(10),
+                BackColor = Color.Transparent,
+                Padding = new Padding(24)
+            };
+            parent.Controls.Add(card, col, row);
+
+            card.Paint += (s, e) => {
+                var rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
+                UITheme.DrawModernCard(e.Graphics, rect, false);
+                using (var pen = new Pen(UITheme.WarningColor, 2))
+                    e.Graphics.DrawLine(pen, 20, 0, card.Width - 20, 0);
+            };
+
+            Label titleLabel = new Label {
+                Text = title,
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 25) // Added clear bottom margin
+            };
+            UITheme.StyleLabel(titleLabel, UITheme.LabelLevel.SubHeader);
+            card.Controls.Add(titleLabel);
+
+            Panel scoresContainer = new Panel {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(0, 10, 0, 0),
+                AutoScroll = true
+            };
+            card.Controls.Add(scoresContainer);
+
+            Color[] rankColors = { Color.FromArgb(255, 215, 0), Color.FromArgb(192, 192, 192), Color.FromArgb(205, 127, 50) };
+
+            for (int i = 0; i < Math.Min(topScores.Count, 3); i++)
+            {
+                var score = topScores[i];
+                if (string.IsNullOrWhiteSpace(score.Player)) continue;
+
+                Panel item = new Panel {
+                    Dock = DockStyle.Top,
+                    Height = 50, // Back to 50 for better breathing room
+                    Padding = new Padding(0, 0, 0, 10)
+                };
+                scoresContainer.Controls.Add(item);
+                item.BringToFront(); // Ensures Rank 1 stays at the top
+
+                // Order of adding for docking: Right, then Left, then Fill
+                // We add Fill LAST and BringToFront to ensure it docks correctly in the remaining space
+                Label nameLabel = new Label {
+                    Text = score.Player,
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    ForeColor = Color.White,
+                    Font = UITheme.BodyFont,
+                    Padding = new Padding(15, 0, 0, 0), // Increased padding for clarity
+                    AutoEllipsis = true
+                };
+                item.Controls.Add(nameLabel);
+
+                Label rankLabel = new Label {
+                    Text = (i + 1).ToString(),
+                    Dock = DockStyle.Left,
+                    Width = 40,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                    ForeColor = rankColors[i]
+                };
+                item.Controls.Add(rankLabel);
+
+                Label scoreLabel = new Label {
+                    Text = score.Score.ToString(),
+                    Dock = DockStyle.Right,
+                    Width = 70,
+                    TextAlign = ContentAlignment.MiddleRight,
+                    ForeColor = rankColors[i],
+                    Font = UITheme.HeaderFont,
+                    Padding = new Padding(0, 0, 10, 0)
+                };
+                item.Controls.Add(scoreLabel);
+
+                nameLabel.BringToFront(); // Final Z-order: nameLabel(0), scoreLabel(1), rankLabel(2)
+            }
+
+            if (topScores.Count == 0)
+            {
+                Label emptyLabel = new Label {
+                    Text = "No records yet.",
+                    Dock = DockStyle.Top,
+                    AutoSize = true,
+                    ForeColor = UITheme.TextMuted,
+                    Margin = new Padding(0, 10, 0, 0)
+                };
+                scoresContainer.Controls.Add(emptyLabel);
+            }
         }
     }
 }
