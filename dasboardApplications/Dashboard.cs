@@ -9,6 +9,7 @@ using dasboardApplications.Features.TicTacToe;
 using dasboardApplications.Features.ScoreBoard;
 using dasboardApplications.Features.LoanManagement;
 using dasboardApplications.Features;
+using dasboardApplications.Models;
 
 namespace dasboardApplications
 {
@@ -42,7 +43,11 @@ namespace dasboardApplications
 
         private void RegisterFeatures()
         {
-            _featureManager.RegisterFeature(() => new HomeWelcome());
+            _featureManager.RegisterFeature(() => new HomeWelcome(
+                ServiceContainer.GetService<IRepository<Customer>>(),
+                ServiceContainer.GetService<IRepository<LoanModel>>(),
+                ServiceContainer.GetService<IRepository<AuditLog>>()
+            ));
             _featureManager.RegisterFeature(() => new CarRacing());
             _featureManager.RegisterFeature(() => new TicTacToe());
             _featureManager.RegisterFeature(() => new ScoreBoard());
@@ -192,7 +197,7 @@ namespace dasboardApplications
 
             btn.Click += (s, e) => {
                 SetActiveButton(btn);
-                IFeature? newFeature = Activator.CreateInstance(featureType) as IFeature;
+                IFeature? newFeature = _featureManager.CreateInstance(featureType);
                 if (newFeature != null) ShowFeature(newFeature);
             };
 

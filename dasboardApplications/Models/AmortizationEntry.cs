@@ -40,6 +40,11 @@ namespace dasboardApplications.Models
         public double ClosingBalance { get; set; }
 
         /// <summary>
+        /// The date when this payment is due.
+        /// </summary>
+        public DateTime DueDate { get; set; }
+
+        /// <summary>
         /// Status of this installment (e.g., Paid, Unpaid).
         /// </summary>
         public string Status { get; set; } = "Unpaid";

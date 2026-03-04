@@ -153,3 +153,6 @@ D:\personal-projects\oop-project\dasboardApplications\obj\Debug\net10.0-windows\
 D:\personal-projects\oop-project\dasboardApplications\obj\Debug\net10.0-windows\dasboardApplications.pdb
 D:\personal-projects\oop-project\dasboardApplications\obj\Debug\net10.0-windows\dasboardApplications.genruntimeconfig.cache
 D:\personal-projects\oop-project\dasboardApplications\obj\Debug\net10.0-windows\ref\dasboardApplications.dll
+D:\personal-projects\oop-project\dasboardApplications\obj\Debug\net10.0-windows\dasboardApplications.Features.CarRacing.CarRacing.resources
+D:\personal-projects\oop-project\dasboardApplications\obj\Debug\net10.0-windows\dasboardApplications.Features.TicTacToe.TicTacToe.resources
+D:\personal-projects\oop-project\dasboardApplications\obj\Debug\net10.0-windows\dasboardApplications.Features.HomeWelcome.resources

@@ -55,13 +55,13 @@ namespace dasboardApplications.Features.TicTacToe
 
             if (CheckWin(row, col))
             {
-                OnInternalGameEnded?.Invoke(currentPlayer, false);
                 OnGameOver?.Invoke($"Player {currentPlayer} wins!");
+                OnInternalGameEnded?.Invoke(currentPlayer, false);
             }
             else if (IsGridFull())
             {
-                OnInternalGameEnded?.Invoke(PlayerType.None, true);
                 OnGameOver?.Invoke("The game is a draw!");
+                OnInternalGameEnded?.Invoke(PlayerType.None, true);
             }
             else
             {

@@ -39,7 +39,12 @@ namespace dasboardApplications.Services
                         Username TEXT NOT NULL UNIQUE,
                         PasswordHash TEXT NOT NULL,
                         Salt TEXT NOT NULL,
+                        FullName TEXT,
+                        Email TEXT,
                         Role TEXT NOT NULL,
+                        FailedLoginAttempts INTEGER DEFAULT 0,
+                        LockoutEnd TEXT,
+                        LastLogin TEXT,
                         CreatedAt TEXT NOT NULL,
                         UpdatedAt TEXT NOT NULL
                     );
@@ -94,7 +99,48 @@ namespace dasboardApplications.Services
                         Timestamp TEXT NOT NULL
                     );";
                 command.ExecuteNonQuery();
+
+                // Simple migration: Check for missing columns in Users table
+                MigrateUsersTable(connection);
             }
+        }
+
+        private void MigrateUsersTable(SqliteConnection connection)
+        {
+            var columnsToAdd = new Dictionary<string, string>
+            {
+                { "FullName", "TEXT" },
+                { "Email", "TEXT" },
+                { "FailedLoginAttempts", "INTEGER DEFAULT 0" },
+                { "LockoutEnd", "TEXT" },
+                { "LastLogin", "TEXT" }
+            };
+
+            foreach (var col in columnsToAdd)
+            {
+                if (!ColumnExists(connection, "Users", col.Key))
+                {
+                    var cmd = connection.CreateCommand();
+                    cmd.CommandText = $"ALTER TABLE Users ADD COLUMN {col.Key} {col.Value};";
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private bool ColumnExists(SqliteConnection connection, string tableName, string columnName)
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = $"PRAGMA table_info({tableName});";
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    // column name is in the second column (index 1) of the result set
+                    if (reader.GetString(1).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+            return false;
         }
 
         public void SaveScore(string playerName, string gameName, int score)

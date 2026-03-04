@@ -23,7 +23,11 @@ namespace dasboardApplications
 
         private void SeedAdminUser()
         {
-            _authService.Register("admin", "admin123", UserRole.Admin);
+            // Ensure admin user exists with the correct password
+            _authService.EnsureUser("admin", "Admin@123", UserRole.Admin);
+
+            // Reset all failed attempts on startup as requested
+            _authService.ResetAllFailedAttempts();
         }
 
         private void ApplyTheme()
@@ -51,7 +55,13 @@ namespace dasboardApplications
             string username = usernameTextBox.Text;
             string password = passwordTextBox.Text;
 
-            if (_authService.Login(username, password))
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
+                MessageBox.Show("Please enter both username and password.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (_authService.Login(username, password, out string errorMessage))
             {
                 Dashboard dsh = new Dashboard();
                 dsh.Show();
@@ -59,7 +69,7 @@ namespace dasboardApplications
             }
             else
             {
-                MessageBox.Show("Invalid username or password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(errorMessage, "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

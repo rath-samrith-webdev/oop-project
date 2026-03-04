@@ -10,10 +10,13 @@ namespace dasboardApplications.Core
     public class FeatureManager
     {
         private readonly List<Func<IFeature>> _featureFactories = new List<Func<IFeature>>();
+        private readonly Dictionary<Type, Func<IFeature>> _typeToFactory = new Dictionary<Type, Func<IFeature>>();
 
         public void RegisterFeature(Func<IFeature> factory)
         {
+            var initial = factory();
             _featureFactories.Add(factory);
+            _typeToFactory[initial.GetType()] = factory;
         }
 
         public IEnumerable<IFeature> GetFeatures()
@@ -22,6 +25,15 @@ namespace dasboardApplications.Core
             {
                 yield return factory();
             }
+        }
+
+        public IFeature CreateInstance(Type type)
+        {
+            if (_typeToFactory.TryGetValue(type, out var factory))
+            {
+                return factory();
+            }
+            return (IFeature)Activator.CreateInstance(type);
         }
     }
 }

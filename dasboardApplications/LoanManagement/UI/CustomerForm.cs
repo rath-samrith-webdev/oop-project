@@ -31,26 +31,16 @@ namespace dasboardApplications.Features.LoanManagement
             this.BackColor = UITheme.PrimaryBackground;
             this.ForeColor = UITheme.TextPrimary;
 
-            ApplyToAll(this.Controls);
-
-            UITheme.StyleButton(saveButton, isPrimary: true);
-            UITheme.StyleButton(addNewButton, isPrimary: false);
+            UITheme.StyleButton(addNewButton, isPrimary: true);
+            UITheme.StyleButton(editButton, isPrimary: false);
             UITheme.StyleButton(deleteButton, isPrimary: false, isDanger: true);
             UITheme.StyleButton(refreshButton, isPrimary: false);
+
+            editButton.Enabled = false;
             deleteButton.Enabled = false;
 
             UITheme.StyleLabel(titleLabel, UITheme.LabelLevel.Header);
             UITheme.StyleDataGrid(customerDataGridView);
-        }
-
-        private void ApplyToAll(Control.ControlCollection controls)
-        {
-            foreach (Control ctrl in controls)
-            {
-                if (ctrl is Label lbl && lbl != titleLabel) UITheme.StyleLabel(lbl, UITheme.LabelLevel.Body);
-                else if (ctrl is TextBox txt) UITheme.StyleTextBox(txt);
-                else if (ctrl.HasChildren) ApplyToAll(ctrl.Controls);
-            }
         }
 
         private void LoadCustomers()
@@ -61,44 +51,39 @@ namespace dasboardApplications.Features.LoanManagement
             if (customerDataGridView.Columns["KycDocuments"] != null)
                 customerDataGridView.Columns["KycDocuments"].Visible = false;
 
-            // Format ID column to be smaller using FillWeight
             if (customerDataGridView.Columns["Id"] != null)
             {
-                customerDataGridView.Columns["Id"].FillWeight = 30; // Much smaller than default 100
+                customerDataGridView.Columns["Id"].FillWeight = 30;
                 customerDataGridView.Columns["Id"].HeaderText = "ID";
             }
         }
 
-        private void saveButton_Click(object sender, EventArgs e)
+        private void addNewButton_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(nameTextBox.Text) || string.IsNullOrWhiteSpace(emailTextBox.Text))
+            using (var dialog = new CustomerEditorDialog())
             {
-                MessageBox.Show("Please enter Name and Email.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    _customerService.CreateCustomer(dialog.Customer);
+                    MessageBox.Show("Customer created successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadCustomers();
+                }
             }
+        }
 
-            var customer = _selectedCustomer ?? new Customer();
-            customer.FullName = nameTextBox.Text;
-            customer.Email = emailTextBox.Text;
-            customer.PhoneNumber = phoneTextBox.Text;
-            customer.Address = addressTextBox.Text;
-            customer.KycDocuments = kycTextBox.Text;
-            customer.UpdatedAt = DateTime.Now;
+        private void editButton_Click(object sender, EventArgs e)
+        {
+            if (_selectedCustomer == null) return;
 
-            if (_selectedCustomer == null)
+            using (var dialog = new CustomerEditorDialog(_selectedCustomer))
             {
-                customer.CreatedAt = DateTime.Now;
-                _customerService.CreateCustomer(customer);
-                MessageBox.Show("Customer created successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    _customerService.UpdateCustomer(dialog.Customer);
+                    MessageBox.Show("Customer updated successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadCustomers();
+                }
             }
-            else
-            {
-                _customerService.UpdateCustomer(customer);
-                MessageBox.Show("Customer updated successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-
-            ClearForm();
-            LoadCustomers();
         }
 
         private void customerDataGridView_SelectionChanged(object sender, EventArgs e)
@@ -106,25 +91,28 @@ namespace dasboardApplications.Features.LoanManagement
             if (customerDataGridView.SelectedRows.Count > 0)
             {
                 _selectedCustomer = (Customer)customerDataGridView.SelectedRows[0].DataBoundItem;
-                nameTextBox.Text = _selectedCustomer.FullName;
-                emailTextBox.Text = _selectedCustomer.Email;
-                phoneTextBox.Text = _selectedCustomer.PhoneNumber;
-                addressTextBox.Text = _selectedCustomer.Address;
-                kycTextBox.Text = _selectedCustomer.KycDocuments;
-                saveButton.Text = "Update Customer";
+                editButton.Enabled = true;
                 deleteButton.Enabled = true;
+            }
+            else
+            {
+                _selectedCustomer = null;
+                editButton.Enabled = false;
+                deleteButton.Enabled = false;
             }
         }
 
-        private void addNewButton_Click(object sender, EventArgs e)
+        private void customerDataGridView_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            ClearForm();
+            if (e.RowIndex >= 0)
+            {
+                editButton_Click(sender, e);
+            }
         }
 
         private void refreshButton_Click(object sender, EventArgs e)
         {
             LoadCustomers();
-            MessageBox.Show("Customer list refreshed.", "Refresh", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void searchTextBox_TextChanged(object sender, EventArgs e)
@@ -157,21 +145,8 @@ namespace dasboardApplications.Features.LoanManagement
             {
                 _customerService.DeleteCustomer(_selectedCustomer.Id);
                 MessageBox.Show("Customer deleted successfully.", "Deleted", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                ClearForm();
                 LoadCustomers();
             }
-        }
-
-        private void ClearForm()
-        {
-            _selectedCustomer = null;
-            nameTextBox.Clear();
-            emailTextBox.Clear();
-            phoneTextBox.Clear();
-            addressTextBox.Clear();
-            kycTextBox.Clear();
-            saveButton.Text = "Save Customer";
-            deleteButton.Enabled = false;
         }
     }
 }

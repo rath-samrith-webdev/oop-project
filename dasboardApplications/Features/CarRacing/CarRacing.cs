@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.IO;
 using dasboardApplications.Core;
 using dasboardApplications.Interfaces;
+using dasboardApplications.Models;
 
 namespace dasboardApplications.Features.CarRacing
 {
@@ -17,7 +18,7 @@ namespace dasboardApplications.Features.CarRacing
         private int carSpeed = 5;
         private bool gameOver = false;
         private CarRacingEngine _engine;
-        private IDatabaseService _dbService;
+        private readonly IRepository<ScoreRecord> _scoreRepository;
 
         private System.Windows.Forms.Timer gameTimer;
         private PictureBox playerCar;
@@ -32,10 +33,17 @@ namespace dasboardApplications.Features.CarRacing
         private int backgroundOffset = 0;
         private bool isPaused = false;
 
+        // Key states for smooth movement
+        private bool isLeftDown = false;
+        private bool isRightDown = false;
+        private bool isUpDown = false;
+        private bool isDownDown = false;
+        private float playerVerticalVelocity = 0f;
+
         public CarRacing()
         {
             _engine = new CarRacingEngine();
-            _dbService = ServiceContainer.GetService<IDatabaseService>();
+            _scoreRepository = ServiceContainer.GetService<IRepository<ScoreRecord>>();
 
             _engine.OnScoreChanged += s => { if (scoreLabel != null) scoreLabel.Text = $"SCORE: {s}"; };
             _engine.OnLevelChanged += l => { if (levelLabel != null) levelLabel.Text = $"LEVEL: {l}"; };
@@ -46,15 +54,15 @@ namespace dasboardApplications.Features.CarRacing
 
         private void SetupGame()
         {
-            this.BackColor = Color.FromArgb(20, 20, 25);
+            this.BackColor = UITheme.PrimaryBackground;
             this.DoubleBuffered = true;
             this.KeyPreview = true;
 
             Panel scoreContainer = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 64,
-                BackColor = Color.FromArgb(10, 10, 15),
+                Height = 80, // Slightly taller
+                BackColor = UITheme.SecondaryBackground,
                 Padding = new Padding(32, 0, 32, 0)
             };
             this.Controls.Add(scoreContainer);
@@ -99,13 +107,15 @@ namespace dasboardApplications.Features.CarRacing
             Label instructions = new Label
             {
                 Text = "USE ARROW KEYS TO MOVE",
-                Font = UITheme.BodyFont,
-                ForeColor = UITheme.TextSecondary,
+                Font = UITheme.SmallFont,
+                ForeColor = UITheme.TextMuted,
                 AutoSize = true,
                 Dock = DockStyle.Right,
-                Padding = new Padding(0, 5, 0, 0)
+                TextAlign = ContentAlignment.MiddleRight,
+                Padding = new Padding(0, 0, 20, 0),
+                Height = 80
             };
-            instructions.Controls.Add(new Panel { Dock = DockStyle.Right, Width = 20 }); // Small spacer
+            scoreContainer.Controls.Add(instructions);
 
             Panel hudControls = new Panel
             {
@@ -118,31 +128,25 @@ namespace dasboardApplications.Features.CarRacing
             pauseButton = new Button
             {
                 Text = "PAUSE",
-                Width = 110,
+                Width = 100,
                 Height = 36,
-                Location = new Point(130, 14),
-                BackColor = UITheme.WarningColor,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = UITheme.ButtonFont,
+                Location = new Point(130, 22),
                 Enabled = false
             };
-            pauseButton.FlatAppearance.BorderSize = 0;
+            UITheme.StyleButton(pauseButton, isPrimary: false);
+            pauseButton.BackColor = UITheme.WarningColor;
             pauseButton.Click += (s, e) => TogglePause();
             hudControls.Controls.Add(pauseButton);
 
             startResumeButton = new Button
             {
                 Text = "START",
-                Width = 110,
+                Width = 100,
                 Height = 36,
-                Location = new Point(10, 14),
-                BackColor = UITheme.SuccessColor,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = UITheme.ButtonFont
+                Location = new Point(10, 22)
             };
-            startResumeButton.FlatAppearance.BorderSize = 0;
+            UITheme.StyleButton(startResumeButton, isPrimary: true);
+            startResumeButton.BackColor = UITheme.SuccessColor;
             startResumeButton.Click += (s, e) => ToggleGame();
             hudControls.Controls.Add(startResumeButton);
 
@@ -168,6 +172,7 @@ namespace dasboardApplications.Features.CarRacing
             gameTimer = new System.Windows.Forms.Timer { Interval = 20 };
             gameTimer.Tick += GameTimer_Tick;
             this.KeyDown += CarRacing_KeyDown;
+            this.KeyUp += CarRacing_KeyUp;
         }
 
         private void DrawCar(Graphics g, Rectangle rect, Color bodyColor)
@@ -272,36 +277,68 @@ namespace dasboardApplications.Features.CarRacing
             pauseButton.BackColor = Color.FromArgb(255, 152, 0);
 
             gameTimer.Start();
+            _engine.PlayerVelocity = 0;
+            playerVerticalVelocity = 0;
+            isLeftDown = false;
+            isRightDown = false;
+            isUpDown = false;
+            isDownDown = false;
             this.Invalidate();
         }
 
         private void CarRacing_KeyDown(object? sender, KeyEventArgs e)
         {
-            HandleMovement(e.KeyCode);
+            if (e.KeyCode == Keys.Left) isLeftDown = true;
+            if (e.KeyCode == Keys.Right) isRightDown = true;
+
+            if (gameOver && e.KeyCode == Keys.R) RestartGame();
         }
 
-        private void HandleMovement(Keys key)
+        private void CarRacing_KeyUp(object? sender, KeyEventArgs e)
         {
-            if (gameOver)
-            {
-                if (key == Keys.R) RestartGame();
-                return;
-            }
-
-            if (key == Keys.Left && playerCar.Left > 10)
-                playerCar.Left -= carSpeed * 2;
-            if (key == Keys.Right && playerCar.Left < this.Width - 70)
-                playerCar.Left += carSpeed * 2;
+            if (e.KeyCode == Keys.Left) isLeftDown = false;
+            if (e.KeyCode == Keys.Right) isRightDown = false;
+            if (e.KeyCode == Keys.Up) isUpDown = false;
+            if (e.KeyCode == Keys.Down) isDownDown = false;
         }
+
 
         private void GameTimer_Tick(object? sender, EventArgs e)
         {
             if (gameOver || isPaused) return;
 
-            // Update bounds in engine
+            // Update horizontal movement
+            if (isLeftDown) _engine.PlayerVelocity -= _engine.Acceleration;
+            if (isRightDown) _engine.PlayerVelocity += _engine.Acceleration;
+            _engine.PlayerVelocity *= _engine.Friction;
+
+            if (_engine.PlayerVelocity > _engine.MaxVelocity) _engine.PlayerVelocity = _engine.MaxVelocity;
+            if (_engine.PlayerVelocity < -_engine.MaxVelocity) _engine.PlayerVelocity = -_engine.MaxVelocity;
+            playerCar.Left += (int)_engine.PlayerVelocity;
+
+            // Update vertical movement
+            if (isUpDown) playerVerticalVelocity -= _engine.Acceleration;
+            if (isDownDown) playerVerticalVelocity += _engine.Acceleration;
+            playerVerticalVelocity *= _engine.Friction;
+
+            if (playerVerticalVelocity > _engine.MaxVelocity) playerVerticalVelocity = _engine.MaxVelocity;
+            if (playerVerticalVelocity < -_engine.MaxVelocity) playerVerticalVelocity = -_engine.MaxVelocity;
+            playerCar.Top += (int)playerVerticalVelocity;
+
+            // Boundaries
+            if (playerCar.Left < 15) { playerCar.Left = 15; _engine.PlayerVelocity = 0; }
+            if (playerCar.Left > this.Width - playerCar.Width - 15) { playerCar.Left = this.Width - playerCar.Width - 15; _engine.PlayerVelocity = 0; }
+
+            if (playerCar.Top < 100) { playerCar.Top = 100; playerVerticalVelocity = 0; }
+            if (playerCar.Top > this.Height - playerCar.Height - 20) { playerCar.Top = this.Height - playerCar.Height - 20; playerVerticalVelocity = 0; }
+
+            // Update engine
             _engine.PlayerBounds = playerCar.Bounds;
             _engine.Enemy1Bounds = enemyCar1.Bounds;
             _engine.Enemy2Bounds = enemyCar2.Bounds;
+            _engine.GameWidth = this.Width;
+            _engine.GameHeight = this.Height;
+            _engine.Update();
 
             // Move enemy cars
             enemyCar1.Top += _engine.RoadSpeed;
@@ -310,6 +347,17 @@ namespace dasboardApplications.Features.CarRacing
             // Background scrolling
             backgroundOffset += _engine.RoadSpeed;
             if (backgroundOffset > 100) backgroundOffset = 0;
+
+            // Invulnerability flickering
+            if (_engine.IsInvulnerable)
+            {
+                playerCar.Visible = (_engine.InvulnerabilityTicks / 5) % 2 == 0;
+            }
+            else
+            {
+                playerCar.Visible = true;
+            }
+
             this.Invalidate();
 
             // Reset enemy position if out of bounds
@@ -337,57 +385,87 @@ namespace dasboardApplications.Features.CarRacing
                     _engine.TriggerGameOver($"CRASHED! Out of lives! Score: {scoreLabel.Text.Replace("SCORE: ", "")}");
                     return;
                 }
-                else
-                {
-                    // Reset enemies on hit but keep playing
-                    enemyCar1.Top = -100;
-                    enemyCar2.Top = -400;
-                    this.Invalidate();
-                    return;
-                }
             }
-
-            _engine.Update();
         }
 
         private void CarRacing_Paint(object? sender, PaintEventArgs e)
         {
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
             // Draw road lines
-            Pen roadPen = new Pen(Color.White, 5);
+            Pen roadPen = new Pen(Color.FromArgb(100, Color.White), 2);
             roadPen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
 
             int roadCenter = this.Width / 2;
             e.Graphics.DrawLine(roadPen, roadCenter, 0 + backgroundOffset, roadCenter, this.Height + backgroundOffset);
+            e.Graphics.DrawLine(roadPen, roadCenter, -100 + backgroundOffset, roadCenter, 0 + backgroundOffset);
 
-            // Side lines
-            e.Graphics.DrawLine(new Pen(Color.White, 3), 50, 0, 50, this.Height);
-            e.Graphics.DrawLine(new Pen(Color.White, 3), this.Width - 50, 0, this.Width - 50, this.Height);
+            // Side lines / Barriers
+            using (SolidBrush barrierBrush = new SolidBrush(Color.FromArgb(40, 40, 40)))
+            {
+                e.Graphics.FillRectangle(barrierBrush, 0, 0, 15, this.Height);
+                e.Graphics.FillRectangle(barrierBrush, this.Width - 15, 0, 15, this.Height);
+            }
+
+            // Draw Coins
+            using (SolidBrush coinBrush = new SolidBrush(Color.Gold))
+            using (Pen coinPen = new Pen(Color.Goldenrod, 2))
+            {
+                foreach (var coin in _engine.Coins)
+                {
+                    e.Graphics.FillEllipse(coinBrush, coin);
+                    e.Graphics.DrawEllipse(coinPen, coin);
+
+                    // Add a little shine
+                    e.Graphics.FillEllipse(Brushes.White, coin.X + 4, coin.Y + 4, 4, 4);
+                }
+            }
         }
 
         private void EndGame(string message)
         {
             gameOver = true;
             gameTimer.Stop();
+
+            // Show outcome MessageBox first
             MessageBox.Show(message + "\n\nPress 'R' to Restart!", "Car Racing");
 
+            // Prompt for name after dismissal
             using (var prompt = new PlayerNamePrompt("Enter Your Name"))
             {
                 if (prompt.ShowDialog() == DialogResult.OK)
                 {
-                    _dbService.SaveScore(prompt.PlayerName, "CarRacing", int.Parse(scoreLabel.Text.Replace("Score: ", "")));
+                    int currentScore = 0;
+                    if (scoreLabel != null)
+                    {
+                        // Safely parse score from label
+                        string scoreText = scoreLabel.Text.Replace("SCORE: ", "");
+                        int.TryParse(scoreText, out currentScore);
+                    }
+
+                    _scoreRepository.Add(new ScoreRecord
+                    {
+                        PlayerName = prompt.PlayerName,
+                        GameType = "CarRacing",
+                        Score = currentScore,
+                        Date = DateTime.Now
+                    });
                 }
             }
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            if (gameOver) return base.ProcessCmdKey(ref msg, keyData);
-
-            if (keyData == Keys.Left || keyData == Keys.Right || keyData == Keys.R)
+            if (gameOver)
             {
-                HandleMovement(keyData);
-                return true;
+                if (keyData == Keys.R) { RestartGame(); return true; }
+                return base.ProcessCmdKey(ref msg, keyData);
             }
+
+            if (keyData == Keys.Left) { isLeftDown = true; return true; }
+            if (keyData == Keys.Right) { isRightDown = true; return true; }
+            if (keyData == Keys.Up) { isUpDown = true; return true; }
+            if (keyData == Keys.Down) { isDownDown = true; return true; }
 
             return base.ProcessCmdKey(ref msg, keyData);
         }

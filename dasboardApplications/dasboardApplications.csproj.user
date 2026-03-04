@@ -1,22 +1,43 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Compile Update="CarRacing.cs">
+    <Compile Update="AuthenticationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Core\BaseFeatureForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Core\PlayerNamePrompt.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="Dashboard.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="Form1.cs">
+    <Compile Update="Features\CarRacing\CarRacing.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="PlayerNamePrompt.cs">
+    <Compile Update="Features\HomeWelcome.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="ScoreBoard.cs">
+    <Compile Update="Features\ScoreBoard\ScoreBoard.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="TicTacToe.cs">
+    <Compile Update="Features\TicTacToe\TicTacToe.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="LoanManagement\UI\CustomerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="LoanManagement\UI\LoanForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="LoanManagement\UI\LoanListForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="LoanManagement\UI\PaymentForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="LoanManagement\UI\PaymentHistoryForm.cs">
       <SubType>Form</SubType>
     </Compile>
   </ItemGroup>

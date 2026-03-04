@@ -1,37 +1,34 @@
 using System;
 using Microsoft.Data.Sqlite;
 using dasboardApplications.Models;
+using dasboardApplications.Interfaces;
 
 namespace dasboardApplications.Services
 {
     public class AuditService
     {
-        private readonly string _connectionString;
+        private readonly IRepository<AuditLog> _auditRepository;
 
-        public AuditService(DatabaseService databaseService)
+        public AuditService(IRepository<AuditLog> auditRepository)
         {
-            _connectionString = databaseService.GetConnectionString();
+            _auditRepository = auditRepository;
         }
 
         public void LogAction(string action, string entityName, int entityId, string changes)
         {
             int userId = AuthService.CurrentUser?.Id ?? 0;
 
-            using (var connection = new SqliteConnection(_connectionString))
+            var log = new AuditLog
             {
-                connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText = @"
-                    INSERT INTO AuditLogs (UserId, Action, EntityName, EntityId, Changes, Timestamp)
-                    VALUES ($userId, $action, $entityName, $entityId, $changes, $timestamp);";
-                command.Parameters.AddWithValue("$userId", userId);
-                command.Parameters.AddWithValue("$action", action);
-                command.Parameters.AddWithValue("$entityName", entityName);
-                command.Parameters.AddWithValue("$entityId", entityId);
-                command.Parameters.AddWithValue("$changes", changes);
-                command.Parameters.AddWithValue("$timestamp", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                command.ExecuteNonQuery();
-            }
+                UserId = userId,
+                Action = action,
+                EntityName = entityName,
+                EntityId = entityId,
+                Changes = changes,
+                Timestamp = DateTime.Now
+            };
+
+            _auditRepository.Add(log);
         }
     }
 }

@@ -128,12 +128,13 @@ namespace dasboardApplications.Features.TicTacToe
                     {
                         Size = new Size(btnSize, btnSize),
                         Location = new Point(offsetX + c * (btnSize + 5), offsetY + r * (btnSize + 5)),
-                        Font = new Font("Segoe UI", btnSize / 2.8f, FontStyle.Bold),
+                        Font = new Font("Segoe UI Semibold", btnSize / 3.2f), // Sized for better vertical clearance
                         BackColor = UITheme.SecondaryBackground,
                         ForeColor = UITheme.TextPrimary,
                         FlatStyle = FlatStyle.Flat,
                         Padding = new Padding(0),
                         TextAlign = ContentAlignment.MiddleCenter,
+                        UseCompatibleTextRendering = true, // Better centering for large fonts
                         Tag = new Point(r, c),
                         Cursor = Cursors.Hand
                     };
@@ -172,6 +173,8 @@ namespace dasboardApplications.Features.TicTacToe
 
         private void Engine_OnGameEnded(string message)
         {
+            MessageBox.Show(message, "Game Over");
+
             if (engine != null && engine.WinningLine != null)
             {
                 foreach (var (r, c) in engine.WinningLine)
@@ -181,7 +184,6 @@ namespace dasboardApplications.Features.TicTacToe
                 }
             }
 
-            MessageBox.Show(message, "Game Over");
             gridPanel.Enabled = false;
         }
 
