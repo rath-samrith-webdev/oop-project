@@ -85,7 +85,8 @@ namespace dasboardApplications.Services
                     EMI = Math.Round(emi, 2),
                     InterestComponent = Math.Round(interest, 2),
                     PrincipalComponent = Math.Round(principal, 2),
-                    ClosingBalance = Math.Round(remainingBalance - principal, 2)
+                    ClosingBalance = Math.Round(remainingBalance - principal, 2),
+                    DueDate = loan.StartDate.AddMonths(i * (int)loan.Frequency)
                 };
 
                 schedule.Add(entry);

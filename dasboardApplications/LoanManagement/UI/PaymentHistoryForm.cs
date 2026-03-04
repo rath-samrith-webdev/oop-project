@@ -43,7 +43,7 @@ namespace dasboardApplications.Features.LoanManagement
             tabControlHistory.ForeColor = UITheme.TextPrimary;
             tabTransactions.BackColor = UITheme.PrimaryBackground;
             tabSchedule.BackColor = UITheme.PrimaryBackground;
-            UITheme.StyleTabControl(tabControlHistory);
+            UITheme.StyleTabControl(tabControlHistory, new Size(350, 50));
 
             ApplyToAll(this.Controls);
             tabControlHistory.Refresh();
@@ -55,6 +55,31 @@ namespace dasboardApplications.Features.LoanManagement
 
             lblInfo.ForeColor = UITheme.TextSecondary;
             lblInfo.Font = UITheme.BodyFont;
+
+            // Style Stat Cards
+            foreach (Control ctrl in statsPanel.Controls)
+            {
+                if (ctrl is Panel card && (string)card.Tag == "StatCard")
+                {
+                    card.BackColor = UITheme.SecondaryBackground;
+                    foreach (Control child in card.Controls)
+                    {
+                        if (child is Label lbl)
+                        {
+                            if (lbl.Font.Size > 12) // Value label
+                            {
+                                lbl.ForeColor = UITheme.AccentColor;
+                                lbl.Font = new Font("Segoe UI Variable Display", 22F, FontStyle.Bold);
+                            }
+                            else // Title label
+                            {
+                                lbl.ForeColor = UITheme.TextSecondary;
+                                lbl.Font = new Font("Segoe UI Variable Display", 9F, FontStyle.Bold);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private void SetupScheduleGrid()
@@ -153,6 +178,7 @@ namespace dasboardApplications.Features.LoanManagement
                 dgvPayments.Columns["PaymentDate"].HeaderText = "Date";
 
             LoadInstallmentSchedule(loanId, payments);
+            UpdateStatsCards(loanId, payments);
 
             if (payments.Count == 0)
                 lblInfo.Text = "No payments found for this loan.";
@@ -160,6 +186,43 @@ namespace dasboardApplications.Features.LoanManagement
             {
                 double totalPaid = payments.Sum(p => p.AmountPaid);
                 lblInfo.Text = $"{payments.Count} payment(s) found. Total Paid: {totalPaid:N2}";
+            }
+        }
+
+        private void UpdateStatsCards(int loanId, List<Payment> payments)
+        {
+            var loan = _customerLoans.FirstOrDefault(l => l.Id == loanId);
+            if (loan == null) return;
+
+            var schedule = _loanCalculatorService.GenerateAmortizationSchedule(loan);
+            double totalPaid = payments.Sum(p => p.AmountPaid);
+            double totalPayable = _loanCalculatorService.CalculateTotalPayment(schedule);
+
+            lblTotalPaidValue.Text = totalPaid.ToString("N2");
+            lblOutstandingValue.Text = (totalPayable - totalPaid).ToString("N2");
+
+            double cumulativeExpected = 0;
+            AmortizationEntry nextInstallment = null;
+
+            foreach (var entry in schedule)
+            {
+                cumulativeExpected += entry.EMI;
+                if (totalPaid < cumulativeExpected - 0.01)
+                {
+                    nextInstallment = entry;
+                    break;
+                }
+            }
+
+            if (nextInstallment != null)
+            {
+                lblNextPaymentValue.Text = nextInstallment.EMI.ToString("N2");
+                lblDueDateValue.Text = nextInstallment.DueDate.ToShortDateString();
+            }
+            else
+            {
+                lblNextPaymentValue.Text = "0.00";
+                lblDueDateValue.Text = "Fully Paid";
             }
         }
 

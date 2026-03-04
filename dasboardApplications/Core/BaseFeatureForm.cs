@@ -6,7 +6,7 @@ namespace dasboardApplications.Core
     /// Base class for all forms that integrate into the dashboard.
     /// Provides consistent styling and integration hooks.
     /// </summary>
-    public abstract class BaseFeatureForm : Form
+    public class BaseFeatureForm : Form
     {
         protected BaseFeatureForm()
         {

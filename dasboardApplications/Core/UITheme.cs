@@ -16,6 +16,7 @@ namespace dasboardApplications.Core
 
         // Accents
         public static Color AccentColor = Color.FromArgb(99, 102, 241);          // Indigo 500
+        public static Color SecondaryAccent = Color.FromArgb(6, 182, 212);        // Cyan 400
         public static Color HoverColor = Color.FromArgb(129, 140, 248);          // Indigo 400
         public static Color PressedColor = Color.FromArgb(79, 70, 229);          // Indigo 600
 
@@ -152,11 +153,11 @@ namespace dasboardApplications.Core
             dgv.RowTemplate.Height = 40;
         }
 
-        public static void StyleTabControl(TabControl tab)
+        public static void StyleTabControl(TabControl tab, Size? itemSize = null)
         {
             tab.DrawMode = TabDrawMode.OwnerDrawFixed;
             tab.SizeMode = TabSizeMode.Fixed;
-            tab.ItemSize = new Size(240, 50);
+            tab.ItemSize = itemSize ?? new Size(240, 50);
             tab.Padding = new Point(0, 0);
         }
 
@@ -191,25 +192,25 @@ namespace dasboardApplications.Core
             string text = tab.TabPages[e.Index].Text;
             using (var brush = new SolidBrush(isSelected ? TextPrimary : TextSecondary))
             {
-                // Consistent font size for both states
-                var font = BodyFont;
+                var font = isSelected ? new Font(BodyFont.FontFamily, BodyFont.Size, FontStyle.Bold) : BodyFont;
                 using (var sf = new StringFormat
                 {
                     Alignment = StringAlignment.Center,
-                    LineAlignment = StringAlignment.Center
+                    LineAlignment = StringAlignment.Center,
+                    FormatFlags = StringFormatFlags.NoWrap
                 })
                 {
                     g.DrawString(text, font, brush, tabRect, sf);
                 }
             }
-
             // Selection Indicator (Indigo Underline)
             if (isSelected)
             {
                 using (var pen = new Pen(AccentColor, 3))
                 {
-                    int padding = 30; // Control underline width
-                    g.DrawLine(pen, tabRect.Left + padding, tabRect.Bottom - 4, tabRect.Right - padding, tabRect.Bottom - 4);
+                    int underlineWidth = Math.Min(tabRect.Width - 60, 180); // Capped width
+                    int xStart = tabRect.X + (tabRect.Width - underlineWidth) / 2;
+                    g.DrawLine(pen, xStart, tabRect.Bottom - 4, xStart + underlineWidth, tabRect.Bottom - 4);
                 }
             }
         }
@@ -275,6 +276,30 @@ namespace dasboardApplications.Core
             path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
             path.CloseFigure();
             return path;
+        }
+        public static void AnimateControlEntrance(Control ctrl, int delayMs = 0)
+        {
+            int originalTop = ctrl.Top;
+            ctrl.Top += 16;
+            ctrl.Visible = false;
+
+            var timer = new System.Windows.Forms.Timer { Interval = delayMs + 1 };
+            timer.Tick += (s, e) =>
+            {
+                timer.Stop();
+                ctrl.Visible = true;
+
+                var animTimer = new System.Windows.Forms.Timer { Interval = 16 };
+                int step = 0;
+                animTimer.Tick += (ss, ee) =>
+                {
+                    if (step < 4) { ctrl.Top -= 4; step++; }
+                    else { ctrl.Top = originalTop; animTimer.Stop(); animTimer.Dispose(); }
+                };
+                animTimer.Start();
+                timer.Dispose();
+            };
+            timer.Start();
         }
     }
 }

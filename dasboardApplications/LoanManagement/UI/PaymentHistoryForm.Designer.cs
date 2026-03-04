@@ -25,6 +25,7 @@ namespace dasboardApplications.Features.LoanManagement
             tabControlHistory = new TabControl();
             tabTransactions = new TabPage();
             tabSchedule = new TabPage();
+            statsPanel = new FlowLayoutPanel();
 
             ((System.ComponentModel.ISupportInitialize)dgvPayments).BeginInit();
             ((System.ComponentModel.ISupportInitialize)dgvSchedule).BeginInit();
@@ -39,7 +40,8 @@ namespace dasboardApplications.Features.LoanManagement
                 Dock = DockStyle.Fill,
                 FlowDirection = FlowDirection.TopDown,
                 WrapContents = false,
-                Padding = new Padding(32)
+                Padding = new Padding(32),
+                AutoScroll = true
             };
 
             FlowLayoutPanel filterPanel = new FlowLayoutPanel
@@ -81,21 +83,30 @@ namespace dasboardApplications.Features.LoanManagement
             cmbLoan.Margin = new Padding(0, 0, 24, 0);
 
             btnLoad.Size = new Size(160, 42);
-            btnLoad.Margin = new Padding(0, 28, 0, 0); // Fine-tuned alignment
+            btnLoad.Margin = new Padding(0, 28, 0, 0);
             btnLoad.Text = "Load History";
             btnLoad.Click += btnLoad_Click;
 
+            // statsPanel
+            statsPanel.AutoSize = true;
+            statsPanel.FlowDirection = FlowDirection.LeftToRight;
+            statsPanel.Margin = new Padding(0, 0, 0, 32);
+            statsPanel.Size = new Size(1036, 120);
+            statsPanel.Controls.Add(CreateStatCard("Total Paid", "0.00", out lblTotalPaidValue));
+            statsPanel.Controls.Add(CreateStatCard("Outstanding", "0.00", out lblOutstandingValue));
+            statsPanel.Controls.Add(CreateStatCard("Next Payment", "0.00", out lblNextPaymentValue));
+            statsPanel.Controls.Add(CreateStatCard("Due Date", "N/A", out lblDueDateValue));
+
             // lblInfo
             lblInfo.AutoSize = true;
-            lblInfo.Location = new Point(0, 136);
             lblInfo.Name = "lblInfo";
             lblInfo.Text = "Select a customer and loan to view payment history.";
             lblInfo.Margin = new Padding(0, 0, 0, 16);
 
             // tabControlHistory
-            tabControlHistory.Size = new Size(1036, 610);
+            tabControlHistory.Size = new Size(1036, 500);
             tabControlHistory.DrawMode = TabDrawMode.OwnerDrawFixed;
-            tabControlHistory.ItemSize = new Size(240, 50);
+            tabControlHistory.ItemSize = new Size(400, 50);
             tabControlHistory.SizeMode = TabSizeMode.Fixed;
             tabControlHistory.Controls.Add(tabTransactions);
             tabControlHistory.Controls.Add(tabSchedule);
@@ -106,12 +117,10 @@ namespace dasboardApplications.Features.LoanManagement
             // tabTransactions
             tabTransactions.Text = "Transaction History";
             tabTransactions.Padding = new Padding(10);
-            tabTransactions.BackColor = Color.FromArgb(15, 23, 42);
 
             // tabSchedule
             tabSchedule.Text = "Installment Schedule";
             tabSchedule.Padding = new Padding(10);
-            tabSchedule.BackColor = Color.FromArgb(15, 23, 42);
 
             // dgvPayments
             dgvPayments.Dock = DockStyle.Fill;
@@ -128,13 +137,13 @@ namespace dasboardApplications.Features.LoanManagement
             dgvSchedule.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
             dgvSchedule.Name = "dgvSchedule";
             dgvSchedule.RowHeadersVisible = false;
-            dgvSchedule.Size = new Size(1008, 500);
+            dgvSchedule.Size = new Size(1008, 400);
             dgvSchedule.TabIndex = 0;
             dgvSchedule.CellPainting += dgvSchedule_CellPainting;
             dgvSchedule.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             tabSchedule.Controls.Add(dgvSchedule);
 
-            // Assembly via Panels
+            // Assembly
             FlowLayoutPanel customerGrp = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown };
             customerGrp.Controls.Add(lblCustomer);
             customerGrp.Controls.Add(cmbCustomer);
@@ -149,6 +158,7 @@ namespace dasboardApplications.Features.LoanManagement
 
             mainLayout.Controls.Add(titleLabel);
             mainLayout.Controls.Add(filterPanel);
+            mainLayout.Controls.Add(statsPanel);
             mainLayout.Controls.Add(lblInfo);
             mainLayout.Controls.Add(tabControlHistory);
 
@@ -157,7 +167,7 @@ namespace dasboardApplications.Features.LoanManagement
             // PaymentHistoryForm
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1100, 780);
+            ClientSize = new Size(1100, 850);
             Name = "PaymentHistoryForm";
             Text = "Payment History";
 
@@ -168,6 +178,43 @@ namespace dasboardApplications.Features.LoanManagement
             tabControlHistory.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
+        }
+
+        private Panel CreateStatCard(string title, string initialValue, out Label valueLabel)
+        {
+            Panel card = new Panel
+            {
+                Size = new Size(240, 100),
+                BackColor = System.Drawing.Color.White,
+                Margin = new Padding(0, 0, 24, 0),
+                Padding = new Padding(20)
+            };
+
+            Label titleLbl = new Label
+            {
+                Text = title.ToUpper(),
+                Font = new Font("Segoe UI Variable Display", 9F, FontStyle.Bold),
+                ForeColor = System.Drawing.Color.Gray,
+                AutoSize = true,
+                Dock = DockStyle.Top
+            };
+
+            valueLabel = new Label
+            {
+                Text = initialValue,
+                Font = new Font("Segoe UI Variable Display", 18F, FontStyle.Bold),
+                ForeColor = System.Drawing.Color.Black,
+                AutoSize = true,
+                Dock = DockStyle.Bottom
+            };
+
+            card.Controls.Add(titleLbl);
+            card.Controls.Add(valueLabel);
+
+            // Tag for theme application
+            card.Tag = "StatCard";
+
+            return card;
         }
 
         private Label titleLabel;
@@ -182,5 +229,10 @@ namespace dasboardApplications.Features.LoanManagement
         private TabControl tabControlHistory;
         private TabPage tabTransactions;
         private TabPage tabSchedule;
+        private FlowLayoutPanel statsPanel;
+        private Label lblTotalPaidValue;
+        private Label lblOutstandingValue;
+        private Label lblNextPaymentValue;
+        private Label lblDueDateValue;
     }
 }
